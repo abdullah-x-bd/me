@@ -1,25 +1,24 @@
 # Abdullah X · Personal website
 
-A restrained, responsive portfolio for research, institutions and selected work.
+A typography-led personal research website with an original, realtime canvas visualization.
 
-Built with plain HTML, CSS and JavaScript. The hero contains a custom WebGL2 kinetic topology field, with a Canvas 2D fallback and support for reduced-motion preferences.
+## Structure
 
-## Development
+- **Research:** seven selected publications with direct paper links
+- **Experience:** concise roles and dates
+- **Background:** short introduction and education
+- **Contact:** email and professional profiles
 
-Open `index.html` in your browser, or use a local server:
+## Technology
 
-```sh
-python3 -m http.server 8000
-```
+Pure HTML, CSS and JavaScript. The interactive field is computed from trajectories and constraint functions on a Canvas 2D surface. It reacts to pointer movement, pauses when off-screen and respects reduced-motion preferences. No build process or animation framework is required.
 
-Then visit http://localhost:8000.
+## Run locally
 
-## Deployment
+Open `index.html` in a browser or use `python3 -m http.server 8000`.
 
-Deploy the repository root as a static site using GitHub Pages (Settings → Pages → Deploy from branch → `main`, root).
+## Deploy
 
-## Content
+GitHub Pages, main branch, repository root.
 
-Experience and publication details are sourced from the October 2026 CV, updated with the AI Governance Task Force at Arcadia Impact and MAP-AI Global Working Group. Update links and wording in `index.html` as needed.
-
-No build step, no application tracking and no third-party animation dependencies.
+Content based on October 2026 CV plus the November 2026 Arcadia Impact research appointment.
