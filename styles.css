@@ -492,3 +492,143 @@ html{scroll-behavior:auto}
 @media(prefers-reduced-motion:reduce){
   .project-item,.project-arrow{transition:none}
 }
+
+
+/* Research context: credibility through work and transparent sources, not counters. */
+.research-context{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(250px,.74fr);
+  align-items:end;
+  column-gap:clamp(30px,7vw,114px);
+  border-top:1px solid #cbd4ca;
+  padding:21px 0 34px;
+}
+.research-context p{margin:0}
+.research-context-intro{
+  max-width:570px;
+  color:#3a5142;
+  font-size:clamp(18px,1.65vw,23px);
+  line-height:1.4;
+  font-weight:450;
+  letter-spacing:-.035em;
+}
+.research-context-method{
+  color:#829085;
+  font-size:11px;
+  line-height:1.68;
+  max-width:400px;
+  justify-self:end;
+}
+.engagements-section{padding-top:109px;padding-bottom:111px}
+.engagements-section .section-heading{margin-bottom:43px}
+.engagements-columns{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:clamp(38px,6.4vw,102px);
+}
+.engagements-category{
+  margin:0;
+  padding:0 0 17px;
+  border-bottom:1px solid #bdcdbd;
+  color:#456850;
+  font:500 13px/1.4 var(--sans);
+  letter-spacing:-.016em;
+}
+.engagement-row{
+  display:grid;
+  grid-template-columns:86px minmax(0,1fr);
+  align-items:start;
+  gap:16px;
+  min-height:112px;
+  padding:20px 0 17px;
+  border-bottom:1px solid var(--line);
+  transition:background-color .22s ease;
+}
+.engagement-row:hover{background:rgba(232,239,229,.20)}
+.engagement-date{
+  padding-top:2px;
+  color:#8a958c;
+  font:400 10px/1.4 var(--mono);
+  letter-spacing:.012em;
+  white-space:nowrap;
+}
+.engagement-detail h4{
+  font-size:15.5px;
+  font-weight:500;
+  line-height:1.35;
+  letter-spacing:-.025em;
+  color:#2b392f;
+  margin:0 0 8px;
+}
+.engagement-detail h4 a{transition:color .2s ease}
+.engagement-detail h4 a:hover{color:#4b7654}
+.engagement-detail h4 a span{color:#88a28d;font-size:13px}
+.engagement-role{
+  margin:0 0 4px;
+  color:#5f7566;
+  font-size:12px;
+  line-height:1.5;
+}
+.engagement-organization{
+  margin:0;
+  color:#97a098;
+  font-size:11px;
+  line-height:1.55;
+}
+.engagements-note{
+  margin:27px 0 0;
+  max-width:780px;
+  color:#9aa69a;
+  font:400 10px/1.65 var(--mono);
+}
+.cv-contact-link{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:18px;
+  width:100%;
+  margin:29px 0 8px;
+  padding:14px 0;
+  color:#365642;
+  border-top:1px solid #d9e0d8;
+  border-bottom:1px solid #d9e0d8;
+  font-size:13px;
+  font-weight:500;
+  transition:color .2s ease,background .2s ease;
+}
+.cv-contact-link:hover{color:#61866a;background:rgba(230,237,229,.3)}
+.cv-contact-link span{font:400 16px var(--sans);color:#6d9276}
+@media(max-width:1160px){
+  .nav{gap:clamp(15px,2vw,25px)}
+  .nav a{font-size:11.5px}
+}
+@media(max-width:900px){
+  .engagements-columns{gap:36px}
+  .engagement-row{grid-template-columns:73px minmax(0,1fr);gap:11px}
+  .engagement-detail h4{font-size:14px}
+  .engagement-date{font-size:9px}
+  .research-context{gap:20px;grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+  .engagements-columns{grid-template-columns:minmax(0,1fr);gap:43px}
+  .engagements-category{padding-bottom:15px}
+  .engagement-row{min-height:auto;grid-template-columns:85px minmax(0,1fr);gap:14px}
+  .engagement-detail h4{font-size:15px}
+  .research-context{grid-template-columns:minmax(0,1fr);gap:12px}
+  .research-context-method{justify-self:start;max-width:520px}
+  .nav{gap:13px}
+}
+@media(max-width:610px){
+  .engagements-section{padding-top:78px;padding-bottom:85px}
+  .engagements-section .section-heading{margin-bottom:31px}
+  .engagements-columns{gap:35px}
+  .engagement-row{grid-template-columns:75px minmax(0,1fr);gap:11px;padding:17px 0}
+  .engagement-date{font-size:9px}
+  .engagements-note{font-size:9px}
+  .research-context{padding:18px 0 25px}
+  .research-context-intro{font-size:19px}
+  .research-context-method{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .engagement-row,.cv-contact-link{transition:none}
+}
