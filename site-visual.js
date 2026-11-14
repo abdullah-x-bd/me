@@ -66,10 +66,10 @@
 
   function geometry(time,hover,ambientMode,view){
     const mobile=view.w<610;
-    const yRotation=.28 + time * (ambientMode?.082:.105) +
-      (ambientMode?0:(pointer.x-.5)*.72*hover);
+    const yRotation=.28 + time * (ambientMode?.19:.105) +
+      (ambientMode?0:(pointer.x-.5)*2.35*hover);
     const xRotation=-.34 + Math.sin(time*.24)*.075 +
-      (ambientMode?0:(pointer.y-.5)*.44*hover);
+      (ambientMode?0:(pointer.y-.5)*1.45*hover);
     const cy=Math.cos(yRotation),sy=Math.sin(yRotation);
     const cx=Math.cos(xRotation),sx=Math.sin(xRotation);
     const scale=(ambientMode ? (mobile?.74:.89) : (mobile?.81:.94)) *
@@ -91,17 +91,17 @@
       let projectedY=centreY+y2*scale/depth;
       const mouseX=pointer.x*view.w, mouseY=pointer.y*view.h;
       const dx=projectedX-mouseX, dy=projectedY-mouseY;
-      const fieldRadius=Math.min(view.w,view.h)*.37;
+      const fieldRadius=Math.min(view.w,view.h)*.73;
       const distance=Math.hypot(dx,dy);
-      const push=Math.pow(Math.max(0,1-distance/fieldRadius),2)*hover;
+      const push=Math.pow(Math.max(0,1-distance/fieldRadius),1.3)*hover;
       const inv=1/Math.max(1,distance);
-      const force=fieldRadius*.42*push;
+      const force=fieldRadius*.52*push;
       if(!ambientMode){
-        projectedX+=dx*inv*force;
-        projectedY+=dy*inv*force;
+        projectedX+=dx*inv*force - dy*inv*force*.14;
+        projectedY+=dy*inv*force + dx*inv*force*.14;
       }
       n.x=projectedX;n.y=projectedY;n.z=z2;
-      n.activation=ambientMode ? 0 : mix(n.activation,push,.13);
+      n.activation=ambientMode ? 0 : mix(n.activation,push,motion.matches?1:.32);
     }
     return {centreX,centreY,scale};
   }
@@ -128,6 +128,20 @@
     ctx.clearRect(0,0,w,h);
     const hover=ambientMode?0:pointer.presence;
     const transform=geometry(time,hover,ambientMode,view);
+    if(!ambientMode && hover>.025){
+      const mx=pointer.x*w, my=pointer.y*h;
+      const radius=Math.min(w,h)*.26;
+      const glow=ctx.createRadialGradient(mx,my,0,mx,my,radius);
+      glow.addColorStop(0,'rgba(73,135,88,'+(.055*hover)+')');
+      glow.addColorStop(1,'rgba(73,135,88,0)');
+      ctx.fillStyle=glow;
+      ctx.fillRect(0,0,w,h);
+      ctx.beginPath();
+      ctx.arc(mx,my,5+hover*3,0,TAU);
+      ctx.strokeStyle='rgba(62,112,76,'+(.24*hover)+')';
+      ctx.lineWidth=.8;
+      ctx.stroke();
+    }
     if(!ambientMode){
       // An inner axial contour suggests regulation without illustrating any single paper.
       const r=transform.scale*.31;
@@ -142,16 +156,16 @@
       const front=clamp((a.z+b.z+1.8)/3.5);
       const active=Math.max(a.activation,b.activation);
       const thin=e.tone===2 || e.tone===3;
-      const alpha=(ambientMode?.048:.075)+(ambientMode?.095:.205)*front;
+      const alpha=(ambientMode?.065:.075)+(ambientMode?.16:.205)*front;
       ctx.beginPath();
       const controls=bezier(ctx,a,b,e.tone);
       ctx.lineWidth=(thin?.43:.55)+front*(ambientMode?.22:.34);
-      const value=clamp((alpha*(thin?.56:1)+active*.45)*opacity,0,1);
+      const value=clamp((alpha*(thin?.56:1)+active*.88)*opacity,0,1);
       ctx.strokeStyle='rgba(45,95,66,'+value+')';
       ctx.stroke();
       const animated=!motion.matches && (k%(ambientMode?5:3)===0 || active>.18);
       if(animated){
-        const speed=e.speed*(ambientMode?.85:1.2)*(1+active*.7);
+        const speed=e.speed*(ambientMode?2.1:1.2)*(1+active*1.65);
         const phase=(e.phase+time*speed)%1;
         const q=interpolate(a,b,controls,phase);
         const size=(ambientMode?.7:1.1)+front*(ambientMode?.55:.95)+active*.9;
@@ -187,9 +201,9 @@
     prior=timestamp;lastFrame=timestamp;
     if(!motion.matches)t+=delta;
     scroll=mix(scroll,desiredScroll,motion.matches?1:.09);
-    pointer.x=mix(pointer.x,pointer.tx,.10);
-    pointer.y=mix(pointer.y,pointer.ty,.10);
-    pointer.presence=mix(pointer.presence,pointer.inside&&!motion.matches?1:0,.055);
+    pointer.x=mix(pointer.x,pointer.tx,motion.matches?1:.26);
+    pointer.y=mix(pointer.y,pointer.ty,motion.matches?1:.26);
+    pointer.presence=mix(pointer.presence,pointer.inside?1:0,motion.matches?1:.28);
     const heroRect=heroStage.getBoundingClientRect();
     if(visible){
       resize(hero,hc,foreground,heroRect.width,heroRect.height,1.5);
@@ -212,14 +226,20 @@
     if(h){const box=h.getBoundingClientRect();heroBoundary=box.bottom+window.scrollY}
     if(motion.matches)play();
   }
-  heroStage.addEventListener('pointermove',e=>{
-    if(e.pointerType==='touch')return;
+  function updatePointerFromEvent(e){
     const r=heroStage.getBoundingClientRect();
+    if(r.width<=0 || r.height<=0)return;
     pointer.tx=clamp((e.clientX-r.left)/r.width);
     pointer.ty=clamp((e.clientY-r.top)/r.height);
     pointer.inside=true;
     if(motion.matches)play();
+  }
+  heroStage.addEventListener('pointerenter',updatePointerFromEvent,{passive:true});
+  heroStage.addEventListener('pointermove',e=>{
+    if(e.pointerType==='touch')return;
+    updatePointerFromEvent(e);
   },{passive:true});
+  heroStage.addEventListener('mousemove',updatePointerFromEvent,{passive:true});
   heroStage.addEventListener('pointerleave',()=>{
     pointer.inside=false;
     if(motion.matches)play();
