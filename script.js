@@ -85,67 +85,136 @@ reduce.addEventListener("change",()=>{if(frame)cancelAnimationFrame(frame);frame
 start();
 
 
-// The same kinetic language extends across the viewport behind the page.
-// Unlike a giant document-sized canvas, this fixed viewport is inexpensive
-// to redraw and responds continuously to scrolling and pointer movements.
+// The page-wide field uses the same underlying trajectories as FIELD / 001.
+// Its two local deformations represent a path passing through constraints:
+// individual trajectories diverge, are redirected, and then rejoin.
 const ambientCanvas=document.querySelector("#ambient-field");
 if(ambientCanvas){
  const actx=ambientCanvas.getContext("2d",{alpha:true});
  if(actx){
-  let aw=0,ah=0,adpr=1,aframe=0,aprev=0,at=0,amove=0,ast=0,asTarget=0,amx=.5,amt=.5;
-  let pointerTarget=.5,drawn=0;
-  const rescale=()=>{
-   const dpr=Math.min(window.devicePixelRatio||1,1.35);
-   const width=Math.max(1,window.innerWidth),height=Math.max(1,window.innerHeight);
-   if(width===aw&&height===ah&&adpr===dpr)return;
+  const ambientStage=ambientCanvas.parentElement;
+  let aw=0,ah=0,adpr=1,ambientFrame=0,ambientTime=0,previousTime=0,lastPaint=0;
+  let targetX=.55,targetY=.5,pointerX=.55,pointerY=.5,pointerEnergy=0;
+  let scrollGoal=0,scrollPosition=0;
+  const smallScreen=()=>window.innerWidth<690;
+  const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+  const gaussian=(v,s)=>Math.exp(-1.7*(v/s)**2);
+  const resizeAmbient=()=>{
+   const dpr=Math.min(window.devicePixelRatio||1,smallScreen()?1.25:1.45);
+   const width=Math.max(1,window.innerWidth);
+   const height=Math.max(1,window.innerHeight);
+   if(width===aw&&height===ah&&dpr===adpr)return;
    aw=width;ah=height;adpr=dpr;
-   ambientCanvas.width=Math.round(aw*dpr);
-   ambientCanvas.height=Math.round(ah*dpr);
+   ambientCanvas.width=Math.round(width*dpr);
+   ambientCanvas.height=Math.round(height*dpr);
    actx.setTransform(dpr,0,0,dpr,0,0);
   };
-  const paintAmbient=()=>{
+  const ambientY=(v,u,t,hoverPower)=>{
+   const base=-.13+1.26*v;
+   const saddle=.5+.035*Math.sin(t*.19);
+   let y=base
+    +.15*gaussian(u-.44,.23)*Math.tanh((base-saddle)/.13)
+    -.14*gaussian(u-.76,.19)*Math.tanh((base-.54)/.15)
+    +.009*Math.sin(u*9.5+v*9+t*.33)*gaussian(u-.5,.38)*Math.sin(v*Math.PI*1.6);
+   const dx=u-pointerX,dy=y-pointerY;
+   y+=hoverPower*.103*Math.exp(-1.4*(dx*dx/.013225+dy*dy/.0484))*Math.tanh(dy*10);
+   return y;
+  };
+  const paintAmbient=(t,hoverPower)=>{
    actx.clearRect(0,0,aw,ah);
-   const spacing=aw>680?2.65:1.6;
-   const count=aw>680?69:46;
-   const steps=100;
-   const span=ah*1.55;
-   for(let j=0;j<count;j++){
-    const v=j/(count-1),offset=(j-count*.52)*spacing;
-    const dark=(j%13===0);
+   const strands=smallScreen()?46:76;
+   const steps=smallScreen()?64:104;
+   const padding=smallScreen()?0:aw*.035;
+   const width=aw-2*padding;
+   const drift=(scrollPosition%1500)/1500;
+   const phase=t+drift*.85;
+   // Sparse cross-sections are deliberately omitted in the background;
+   // the hero remains the detailed diagram and everything else remains legible.
+   for(let i=0;i<strands;i++){
+    const v=i/(strands-1);
+    const center=1-Math.abs(v-.5)*2;
+    const strong=i%12===0;
     actx.beginPath();
-    for(let i=0;i<=steps;i++){
-     const u=i/steps;
-     const y=(u-.25)*span;
-     const swell=Math.sin(u*4.6-at*.12+ast*.00032);
-     const x=aw*(.74+.105*swell)+offset
-        +aw*.045*Math.sin(u*8.4+v*3.2+at*.075)
-        +amove*aw*.025*Math.exp(-Math.pow((u-.5)*2,2));
-     if(i===0)actx.moveTo(x,y);else actx.lineTo(x,y);
+    for(let k=0;k<=steps;k++){
+     const u=k/steps;
+     const x=padding+u*width;
+     const y=ambientY(v,u,phase,hoverPower)*ah;
+     if(k===0)actx.moveTo(x,y);else actx.lineTo(x,y);
     }
-    const weight=(1-Math.abs(v-.5)*1.3);
-    actx.strokeStyle="rgba(52,99,67,"+((dark?.092:.041)*(0.75+weight*.23))+")";
-    actx.lineWidth=dark?.7:.45;
+    actx.lineWidth=strong?.82:.53;
+    const alpha=Math.min(.14,(.045+.065*center)*(strong?1.45:1));
+    actx.strokeStyle="rgba(51,87,66,"+alpha+")";
     actx.stroke();
    }
+   // Tiny traveling samples make the flow readable as trajectories,
+   // rather than a decorative striped texture.
+   for(let i=0;i<8;i++){
+    const v=(8+i*7)/(smallScreen()?46:76);
+    const u=(i*.127+.21+t*.009+drift*.025)%1;
+    const y=ambientY(v,u,phase,hoverPower)*ah;
+    const x=padding+u*width;
+    actx.beginPath();
+    actx.arc(x,y,i%3===0?1.45:1,0,Math.PI*2);
+    actx.fillStyle="rgba(55,92,68,"+(i%3===0?.26:.16)+")";
+    actx.fill();
+   }
   };
-  const ambientTick=(stamp)=>{
-   aframe=0;
+  let heroHeight=700;
+  const refreshHeroHeight=()=>{
+   const hero=document.querySelector(".hero");
+   heroHeight=hero?hero.getBoundingClientRect().height:700;
+  };
+  refreshHeroHeight();
+  const refreshScroll=()=>{
+   scrollGoal=window.scrollY||0;
+   if(reduce.matches)startAmbient();
+  };
+  const ambientTick=(timestamp)=>{
+   ambientFrame=0;
    if(document.hidden)return;
-   if(!reduce.matches&&stamp-drawn<31){aframe=requestAnimationFrame(ambientTick);return}
-   const dt=aprev?Math.min(.055,(stamp-aprev)/1000):0;aprev=stamp;drawn=stamp;
-   if(!reduce.matches)at+=dt;
-   amx+=(pointerTarget-amx)*.055;
-   ast+=(asTarget-ast)*.045;
-   amove+=((amx-.5)-amove)*.045;
-   rescale();paintAmbient();
-   if(!reduce.matches)aframe=requestAnimationFrame(ambientTick);
+   if(!reduce.matches&&timestamp-lastPaint<33){
+    ambientFrame=requestAnimationFrame(ambientTick);
+    return;
+   }
+   const dt=previousTime?Math.min((timestamp-previousTime)/1000,.06):0;
+   previousTime=timestamp;lastPaint=timestamp;
+   if(!reduce.matches)ambientTime+=dt;
+   resizeAmbient();
+   const ease=reduce.matches?1:.075;
+   scrollPosition+=(scrollGoal-scrollPosition)*ease;
+   pointerX+=(targetX-pointerX)*ease;
+   pointerY+=(targetY-pointerY)*ease;
+   pointerEnergy+=((reduce.matches?0:1)-pointerEnergy)*(reduce.matches?1:.035);
+   // The hero sculpture owns the first viewport. The ambient field
+   // appears gradually as the user enters the rest of the page.
+   const reveal=clamp((scrollPosition-heroHeight*.42)/(heroHeight*.56));
+   ambientStage.style.opacity=String(reveal*(smallScreen()?.65:.84));
+   paintAmbient(ambientTime,pointerEnergy*.40);
+   if(!reduce.matches)ambientFrame=requestAnimationFrame(ambientTick);
   };
-  const startAmbient=()=>{if(aframe||document.hidden)return;aprev=0;aframe=requestAnimationFrame(ambientTick)};
-  window.addEventListener("scroll",()=>{asTarget=window.scrollY;if(reduce.matches)startAmbient()},{passive:true});
-  window.addEventListener("pointermove",e=>{if(e.pointerType!=="touch"){pointerTarget=e.clientX/Math.max(1,window.innerWidth);if(reduce.matches)startAmbient()}},{passive:true});
-  window.addEventListener("resize",startAmbient,{passive:true});
+  function startAmbient(){
+   if(ambientFrame||document.hidden)return;
+   previousTime=0;
+   ambientFrame=requestAnimationFrame(ambientTick);
+  }
+  window.addEventListener("pointermove",e=>{
+   if(reduce.matches||e.pointerType==="touch")return;
+   targetX=clamp(e.clientX/Math.max(1,window.innerWidth));
+   targetY=clamp(e.clientY/Math.max(1,window.innerHeight));
+  },{passive:true});
+  window.addEventListener("scroll",refreshScroll,{passive:true});
+  window.addEventListener("resize",()=>{
+   refreshHeroHeight();
+   resizeAmbient();
+   if(reduce.matches)startAmbient();
+  },{passive:true});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)startAmbient()});
-  reduce.addEventListener("change",()=>{if(aframe)cancelAnimationFrame(aframe);aframe=0;startAmbient()});
+  reduce.addEventListener("change",()=>{
+   if(ambientFrame)cancelAnimationFrame(ambientFrame);
+   ambientFrame=0;
+   startAmbient();
+  });
+  scrollGoal=scrollPosition=window.scrollY||0;
   startAmbient();
  }
 }
