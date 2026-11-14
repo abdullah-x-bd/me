@@ -94,7 +94,7 @@ if(ambientCanvas){
  if(actx){
   const ambientStage=ambientCanvas.parentElement;
   let aw=0,ah=0,adpr=1,ambientFrame=0,ambientTime=0,previousTime=0,lastPaint=0;
-  let targetX=.55,targetY=.5,pointerX=.55,pointerY=.5,pointerEnergy=0;
+  let targetX=.55,targetY=.5,pointerX=.55,pointerY=.5,pointerEnergy=0,pointerActive=false;
   let scrollGoal=0,scrollPosition=0;
   const smallScreen=()=>window.innerWidth<690;
   const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
@@ -126,7 +126,7 @@ if(ambientCanvas){
    const steps=smallScreen()?64:104;
    const padding=smallScreen()?0:aw*.035;
    const width=aw-2*padding;
-   const drift=(scrollPosition%1500)/1500;
+   const drift=scrollPosition*.00055;
    const phase=t+drift*.85;
    // Sparse cross-sections are deliberately omitted in the background;
    // the hero remains the detailed diagram and everything else remains legible.
@@ -184,7 +184,7 @@ if(ambientCanvas){
    scrollPosition+=(scrollGoal-scrollPosition)*ease;
    pointerX+=(targetX-pointerX)*ease;
    pointerY+=(targetY-pointerY)*ease;
-   pointerEnergy+=((reduce.matches?0:1)-pointerEnergy)*(reduce.matches?1:.035);
+   pointerEnergy+=((!reduce.matches&&pointerActive?1:0)-pointerEnergy)*(reduce.matches?1:.035);
    // The hero sculpture owns the first viewport. The ambient field
    // appears gradually as the user enters the rest of the page.
    const reveal=clamp((scrollPosition-heroHeight*.42)/(heroHeight*.56));
@@ -201,7 +201,9 @@ if(ambientCanvas){
    if(reduce.matches||e.pointerType==="touch")return;
    targetX=clamp(e.clientX/Math.max(1,window.innerWidth));
    targetY=clamp(e.clientY/Math.max(1,window.innerHeight));
+   pointerActive=true;
   },{passive:true});
+  document.addEventListener("pointerleave",()=>{pointerActive=false},{passive:true});
   window.addEventListener("scroll",refreshScroll,{passive:true});
   window.addEventListener("resize",()=>{
    refreshHeroHeight();
