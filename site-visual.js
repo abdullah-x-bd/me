@@ -50,7 +50,7 @@
   }
   const foreground = {w:0,h:0,d:0};
   const background = {w:0,h:0,d:0};
-  const pointer = {x:.57,y:.49,tx:.57,ty:.49,fx:.5,fy:.5,tfx:.5,tfy:.5,near:0,targetNear:0,presence:0,inside:false};
+  const pointer = {x:.57,y:.49,tx:.57,ty:.49,fx:.5,fy:.5,tfx:.5,tfy:.5,near:0,targetNear:0,presence:0,inside:false,anchorX:.57,anchorY:.49,tiltX:0,tiltY:0,targetTiltX:0,targetTiltY:0};
   let scroll=window.scrollY || 0, desiredScroll=scroll;
   let t=0, prior=0, lastFrame=0, request=0, visible=true;
   let heroBoundary=720;
@@ -68,12 +68,12 @@
   function geometry(time,hover,ambientMode,view){
     const mobile=view.w<610;
     const yRotation=.28 + time * (ambientMode?.19:.105) +
-      (ambientMode?0:(pointer.x-.5)*.34*hover);
+      (ambientMode?0:pointer.tiltX);
     const xRotation=-.34 + Math.sin(time*.24)*.075 +
-      (ambientMode?0:(pointer.y-.5)*.24*hover);
+      (ambientMode?0:pointer.tiltY);
     const cy=Math.cos(yRotation),sy=Math.sin(yRotation);
     const cx=Math.cos(xRotation),sx=Math.sin(xRotation);
-    const expansion=ambientMode?1:1+pointer.near*hover*.048;
+    const expansion=ambientMode?1:1+pointer.near*hover*.036;
     const scale=(ambientMode ? (mobile?.74:.89) : (mobile?.81:.94)) *
       Math.min(view.w/3.9,view.h/2.6)*expansion;
     const centreX=view.w*(ambientMode?.67:.51),centreY=view.h*(ambientMode?.49:.50);
@@ -188,8 +188,10 @@
     pointer.y=mix(pointer.y,pointer.ty,motion.matches?1:.10);
     pointer.fx=mix(pointer.fx,pointer.tfx,motion.matches?1:.14);
     pointer.fy=mix(pointer.fy,pointer.tfy,motion.matches?1:.14);
-    pointer.near=mix(pointer.near,pointer.inside?pointer.targetNear:0,motion.matches?1:.09);
-    pointer.presence=mix(pointer.presence,pointer.inside?1:0,motion.matches?1:.09);
+    pointer.near=mix(pointer.near,pointer.inside?pointer.targetNear:0,motion.matches?1:.045);
+    pointer.presence=mix(pointer.presence,pointer.inside?1:0,motion.matches?1:.045);
+    pointer.tiltX=mix(pointer.tiltX,pointer.inside?pointer.targetTiltX:0,motion.matches?1:.055);
+    pointer.tiltY=mix(pointer.tiltY,pointer.inside?pointer.targetTiltY:0,motion.matches?1:.055);
     const heroRect=heroStage.getBoundingClientRect();
     if(visible){
       resize(hero,hc,foreground,heroRect.width,heroRect.height,1.5);
@@ -214,34 +216,58 @@
   }
   // The entire first-page composition, including text and footer, is
   // one continuous hover surface. The sculpture's canvas stays in place.
-  function updatePointerFromEvent(e){
+  // Entering the interactive region does not change the sculpture's pose.
+  // Interaction is measured as a continuous displacement from the point of
+  // entry, not as an abrupt absolute rotation tied to hover state.
+  function updatePointerFromEvent(e,fresh=false){
     const area=heroArea.getBoundingClientRect();
     const figure=heroStage.getBoundingClientRect();
     if(area.width<=0||area.height<=0||figure.width<=0||figure.height<=0)return;
-    pointer.tx=clamp((e.clientX-area.left)/area.width);
-    pointer.ty=clamp((e.clientY-area.top)/area.height);
-    // Unclamped figure-local coordinates are intentional: the cursor can
-    // remain outside the sculpture while still tilting it subtly.
-    pointer.tfx=(e.clientX-figure.left)/figure.width;
-    pointer.tfy=(e.clientY-figure.top)/figure.height;
-    const dx=(pointer.tfx-.5)/.57;
-    const dy=(pointer.tfy-.5)/.59;
+    const x=clamp((e.clientX-area.left)/area.width);
+    const y=clamp((e.clientY-area.top)/area.height);
+    const fx=(e.clientX-figure.left)/figure.width;
+    const fy=(e.clientY-figure.top)/figure.height;
+
+    if(fresh||!pointer.inside){
+      pointer.inside=true;
+      pointer.anchorX=x;
+      pointer.anchorY=y;
+      pointer.x=pointer.tx=x;
+      pointer.y=pointer.ty=y;
+      pointer.fx=pointer.tfx=fx;
+      pointer.fy=pointer.tfy=fy;
+      pointer.targetTiltX=0;
+      pointer.targetTiltY=0;
+      pointer.targetNear=0;
+      // Crucially, no geometry state jumps at the boundary.
+      if(motion.matches)play();
+      return;
+    }
+
+    pointer.tx=x;
+    pointer.ty=y;
+    pointer.tfx=fx;
+    pointer.tfy=fy;
+    pointer.targetTiltX=clamp((x-pointer.anchorX)*.17,-.080,.080);
+    pointer.targetTiltY=clamp((y-pointer.anchorY)*.115,-.060,.060);
+    const dx=(fx-.5)/.57,dy=(fy-.5)/.59;
     pointer.targetNear=Math.exp(-1.2*(dx*dx+dy*dy));
-    pointer.inside=true;
     if(motion.matches)play();
   }
   heroArea.addEventListener('pointerenter',e=>{
     if(e.pointerType==='touch')return;
-    updatePointerFromEvent(e);
+    updatePointerFromEvent(e,true);
   },{passive:true});
   heroArea.addEventListener('pointermove',e=>{
     if(e.pointerType==='touch')return;
     updatePointerFromEvent(e);
   },{passive:true});
-  heroArea.addEventListener('mousemove',updatePointerFromEvent,{passive:true});
+  heroArea.addEventListener('mousemove',e=>updatePointerFromEvent(e),{passive:true});
   heroArea.addEventListener('pointerleave',()=>{
     pointer.inside=false;
     pointer.targetNear=0;
+    pointer.targetTiltX=0;
+    pointer.targetTiltY=0;
     if(motion.matches)play();
   },{passive:true});
   window.addEventListener('scroll',()=>{
