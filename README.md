@@ -1,24 +1,41 @@
-# Abdullah X · Personal website
+# Abdullah X | Personal website
 
-A typography-led personal research website with an original, realtime canvas visualization.
+A typography-led, responsive personal website for research, governance and institutional work.
 
-## Structure
+## Interactive visual system
 
-- **Research:** seven selected publications with direct paper links
-- **Experience:** concise roles and dates
-- **Background:** short introduction and education
-- **Contact:** email and professional profiles
+The landing graphic is a custom Canvas 2D neural lattice with:
+- multilayer connected nodes and curved weighted edges
+- signals flowing continuously along connections, even at rest
+- elastic node displacement and local activation when the cursor approaches
+- click-triggered waves of activation
+- an integrated but unlabeled control region that subtly modulates the visual structure
 
-## Technology
+The same network language continues behind the page as a quieter, continuously animated background. The ambient layer responds to cursor movement and page interaction, fades in below the introduction, and pauses when the tab is hidden.
 
-Pure HTML, CSS and JavaScript. The interactive field is computed from trajectories and constraint functions on a Canvas 2D surface. It reacts to pointer movement, pauses when off-screen and respects reduced-motion preferences. No build process or animation framework is required.
+The diagram is **generative visual art**, not a reconstruction of research data or a claimed neural-network model of any particular paper.
 
-## Run locally
+## Content
 
-Open `index.html` in a browser or use `python3 -m http.server 8000`.
+- Seven selected publications with expandable links to eight documented external references, distinguished by source type
+- Ten professional roles and three appointments or memberships
+- Short biographical background and education
+- Three professional email contacts
+
+## Run
+
+No build system and no UI library.
+
+```sh
+python3 -m http.server 8000
+```
+
+Open http://localhost:8000.
 
 ## Deploy
 
-GitHub Pages, main branch, repository root.
+The GitHub Pages site deploys directly from the `main` branch, repository root.
 
-Content based on October 2026 CV plus the November 2026 Arcadia Impact research appointment.
+## Accessibility
+
+Responsive typography and grid, keyboard navigation for menus and citation panels, reduced-motion support and descriptive labels for the interactive visual.
