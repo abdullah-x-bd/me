@@ -1,468 +1,244 @@
 (() => {
-  "use strict";
+  'use strict';
+  const hero = document.getElementById('field');
+  const ambient = document.getElementById('ambient-field');
+  if (!hero || !ambient) return;
+  const heroStage = hero.parentElement;
+  const ambientStage = ambient.parentElement;
+  const hc = hero.getContext('2d', {alpha: true});
+  const ac = ambient.getContext('2d', {alpha: true});
+  if (!hc || !ac) return;
 
-  const heroCanvas = document.getElementById("field");
-  const ambientCanvas = document.getElementById("ambient-field");
-  if (!heroCanvas || !ambientCanvas) return;
-
-  const heroStage = heroCanvas.parentElement;
-  const ambientStage = ambientCanvas.parentElement;
-  const heroCtx = heroCanvas.getContext("2d", { alpha: true });
-  const ambientCtx = ambientCanvas.getContext("2d", { alpha: true });
-  if (!heroCtx || !ambientCtx) return;
-
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const TAU = Math.PI * 2;
-  const clamp = (x, min = 0, max = 1) => Math.max(min, Math.min(max, x));
-  const lerp = (a, b, n) => a + (b - a) * n;
-  const smoothstep = (a, b, value) => {
-    const t = clamp((value - a) / (b - a));
-    return t * t * (3 - 2 * t);
+  const clamp = (v,a=0,b=1) => Math.min(b, Math.max(a,v));
+  const mix = (a,b,t) => a+(b-a)*t;
+  const ease = v => v*v*(3-2*v);
+  const random = seed => () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
   };
-  const fract = value => value - Math.floor(value);
-
-  function seededRandom(seed) {
-    let value = seed >>> 0;
-    return () => {
-      value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
-      return value / 4294967296;
-    };
-  }
-
-  // An original multilayer lattice. Structured connectivity keeps the
-  // geometry recognizable while its state remains continuously alive.
-  function buildNetwork(seed, ambient) {
-    const random = seededRandom(seed);
-    const population = ambient ? [5, 8, 10, 11, 10, 8, 5] : [6, 9, 11, 13, 11, 9, 6];
-    const layers = [];
-    const nodes = [];
-    const edges = [];
-
-    population.forEach((count, layerIndex) => {
-      const layer = [];
-      for (let index = 0; index < count; index++) {
-        const u = count > 1 ? index / (count - 1) : .5;
-        const spread = ambient ? .79 : .76;
-        const x = .095 + (layerIndex / (population.length - 1)) * .81 +
-          (random() - .5) * .020;
-        const y = .5 + (u - .5) * spread +
-          (random() - .5) * .032;
-        const node = {
-          id: nodes.length,
-          layer: layerIndex,
-          baseX: x,
-          baseY: y,
-          x, y,
-          phase: random() * TAU,
-          pace: .52 + random() * .48,
-          size: .85 + random() * .72,
-          activation: 0,
-          originIndex: index
-        };
-        nodes.push(node);
-        layer.push(node.id);
-      }
-      layers.push(layer);
-    });
-
-    const edgeKeys = new Set();
-    function join(a, b, strength) {
-      const key = a + "|" + b;
-      if (edgeKeys.has(key)) return;
-      edgeKeys.add(key);
-      edges.push({
-        a, b,
-        phase: random(),
-        pace: .68 + random() * .63,
-        weight: strength * (.72 + random() * .36),
-        bend: (random() - .5) * .08,
-        highlighted: random() < .06
+  const rnd = random(260809828);
+  const rings = 15, spokes = 15;
+  const nodes = [], edges = [];
+  for (let i=0; i<rings; i++) {
+    const u = i / (rings - 1);
+    const envelope = Math.pow(Math.sin(Math.PI * (.07+.86*u)), .67);
+    const radius = envelope * (.55 + .24 * Math.pow(Math.cos(u*Math.PI*2.1),2));
+    for(let j=0; j<spokes; j++){
+      const a = TAU * j/spokes + u*2.1 + (rnd()-.5)*.14;
+      nodes.push({
+        u,a,radius:radius*(.95+.10*rnd()),
+        phase:rnd()*TAU,seed:rnd(),
+        x:0,y:0,z:0,activation:0
       });
     }
+  }
+  const index = (i,j) => i*spokes+((j%spokes)+spokes)%spokes;
+  for(let i=0;i<rings-1;i++){
+    for(let j=0;j<spokes;j++){
+      const source=index(i,j);
+      edges.push({a:source,b:index(i+1,j),tone:0,phase:rnd(),speed:.12+.17*rnd()});
+      if(i%2===0 || rnd()>.30)
+        edges.push({a:source,b:index(i+1,j+1),tone:1,phase:rnd(),speed:.09+.15*rnd()});
+      if(i%3===0 && rnd()>.35)
+        edges.push({a:source,b:index(i+2<rings?i+2:i+1,j-1),tone:2,phase:rnd(),speed:.11+.16*rnd()});
+      if(rnd()>.66)
+        edges.push({a:source,b:index(i,j+1),tone:3,phase:rnd(),speed:.08+.12*rnd()});
+    }
+  }
+  const foreground = {w:0,h:0,d:0};
+  const background = {w:0,h:0,d:0};
+  const pointer = {x:.57,y:.49,tx:.57,ty:.49,presence:0,inside:false};
+  let scroll=window.scrollY || 0, desiredScroll=scroll;
+  let t=0, prior=0, lastFrame=0, request=0, visible=true;
+  let heroBoundary=720;
 
-    for (let layer = 0; layer < layers.length - 1; layer++) {
-      for (const id of layers[layer]) {
-        const candidates = layers[layer + 1]
-          .map(next => ({
-            id: next,
-            distance: Math.abs(nodes[id].baseY - nodes[next].baseY) + random() * .075
-          }))
-          .sort((a, b) => a.distance - b.distance);
-        candidates.slice(0, 2 + (random() < .50 ? 1 : 0))
-          .forEach((candidate, rank) => join(id, candidate.id, rank === 0 ? 1 : .68));
-        if (layer < layers.length - 2 && random() < .22) {
-          const far = layers[layer + 2]
-            .reduce((best, next) =>
-              Math.abs(nodes[id].baseY - nodes[next].baseY) <
-              Math.abs(nodes[id].baseY - nodes[best].baseY) ? next : best);
-          join(id, far, .34);
-        }
+  function resize(canvas,ctx,view,w,h,maxDpr){
+    const d=Math.min(window.devicePixelRatio||1,maxDpr);
+    const width=Math.max(1,Math.round(w)),height=Math.max(1,Math.round(h));
+    if(view.w!==width || view.h!==height || view.d!==d){
+      view.w=width;view.h=height;view.d=d;
+      canvas.width=Math.round(width*d);canvas.height=Math.round(height*d);
+      ctx.setTransform(d,0,0,d,0,0);
+    }
+  }
+
+  function geometry(time,hover,ambientMode,view){
+    const mobile=view.w<610;
+    const yRotation=.28 + time * (ambientMode?.082:.105) +
+      (ambientMode?0:(pointer.x-.5)*.72*hover);
+    const xRotation=-.34 + Math.sin(time*.24)*.075 +
+      (ambientMode?0:(pointer.y-.5)*.44*hover);
+    const cy=Math.cos(yRotation),sy=Math.sin(yRotation);
+    const cx=Math.cos(xRotation),sx=Math.sin(xRotation);
+    const scale=(ambientMode ? (mobile?.74:.89) : (mobile?.81:.94)) *
+      Math.min(view.w/3.9,view.h/2.6);
+    const centreX=view.w*(ambientMode?.67:.51),centreY=view.h*(ambientMode?.49:.50);
+    for(const n of nodes){
+      const bend=.075*Math.sin(n.u*TAU*1.45+time*.33+n.phase*.18);
+      const r=n.radius*(1+.046*Math.sin(time*.49 + n.phase));
+      const p=n.a + .08*Math.sin(time*.33 + n.u*4.5);
+      const x=(n.u-.5)*3.30;
+      const y=r*1.16*Math.cos(p) + bend;
+      const z=r*.95*Math.sin(p) + .045*Math.cos(time*.30+n.phase);
+      const x1=x*cy-z*sy;
+      const z1=x*sy+z*cy;
+      const y2=y*cx-z1*sx;
+      const z2=y*sx+z1*cx;
+      const depth=1.0+z2*.11;
+      let projectedX=centreX+x1*scale/depth;
+      let projectedY=centreY+y2*scale/depth;
+      const mouseX=pointer.x*view.w, mouseY=pointer.y*view.h;
+      const dx=projectedX-mouseX, dy=projectedY-mouseY;
+      const fieldRadius=Math.min(view.w,view.h)*.37;
+      const distance=Math.hypot(dx,dy);
+      const push=Math.pow(Math.max(0,1-distance/fieldRadius),2)*hover;
+      const inv=1/Math.max(1,distance);
+      const force=fieldRadius*.42*push;
+      if(!ambientMode){
+        projectedX+=dx*inv*force;
+        projectedY+=dy*inv*force;
       }
+      n.x=projectedX;n.y=projectedY;n.z=z2;
+      n.activation=ambientMode ? 0 : mix(n.activation,push,.13);
     }
-
-    return { nodes, edges, layers, seed };
+    return {centreX,centreY,scale};
   }
 
-  const heroNetwork = buildNetwork(72893, false);
-  const ambientNetwork = buildNetwork(110983, true);
-  const heroSize = { width: 0, height: 0, dpr: 0 };
-  const ambientSize = { width: 0, height: 0, dpr: 0 };
-
-  let elapsed = 0;
-  let previous = 0;
-  let lastDraw = 0;
-  let requestId = 0;
-  let heroVisible = true;
-  let scroll = window.scrollY || 0;
-  let targetScroll = scroll;
-  let heroBottom = 780;
-  let pageActive = !document.hidden;
-
-  const mouseHero = { x: .5, y: .5, targetX: .5, targetY: .5, active: false, influence: 0 };
-  const mouseAmbient = { x: .5, y: .5, targetX: .5, targetY: .5, active: false, influence: 0 };
-  const heroWaves = [];
-  const ambientWaves = [];
-
-  function sizeCanvas(canvas, ctx, box, width, height, limit) {
-    const dpr = Math.min(window.devicePixelRatio || 1, limit);
-    const w = Math.max(1, Math.round(width));
-    const h = Math.max(1, Math.round(height));
-    if (box.width !== w || box.height !== h || box.dpr !== dpr) {
-      box.width = w;
-      box.height = h;
-      box.dpr = dpr;
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
+  function bezier(ctx,a,b,mode){
+    const dx=b.x-a.x,dy=b.y-a.y;
+    const curve=mode===2?.20:mode===3?.32:.13;
+    const bias=(a.z+b.z)*.035;
+    const q1x=a.x+dx*.39, q1y=a.y+dy*curve-bias*40;
+    const q2x=b.x-dx*.39, q2y=b.y-dy*curve+bias*40;
+    ctx.moveTo(a.x,a.y);
+    ctx.bezierCurveTo(q1x,q1y,q2x,q2y,b.x,b.y);
+    return {q1x,q1y,q2x,q2y};
   }
-
-  function updateGeometry(network, pointer, waves, t, dt, ambient) {
-    const easing = reducedMotion.matches ? 1 : 1 - Math.pow(.035, Math.min(dt, .055));
-    pointer.x = lerp(pointer.x, pointer.targetX, .14);
-    pointer.y = lerp(pointer.y, pointer.targetY, .14);
-    pointer.influence = lerp(pointer.influence, pointer.active ? 1 : 0, .075);
-    if (reducedMotion.matches) pointer.influence = 0;
-
-    for (let k = waves.length - 1; k >= 0; k--) {
-      if (t - waves[k].born > 2.45) waves.splice(k, 1);
-    }
-
-    for (const node of network.nodes) {
-      const phase = node.phase;
-      const amplitude = ambient ? .019 : .015;
-      let x = node.baseX +
-        Math.sin(t * (.34 + node.pace * .19) + phase) * amplitude +
-        Math.sin(t * .17 + node.layer * .9) * .006;
-      let y = node.baseY +
-        Math.cos(t * (.43 + node.pace * .16) + phase * .75) * amplitude * 1.55 +
-        Math.sin(t * .23 + node.originIndex) * .005;
-      if (ambient) {
-        y += Math.sin(scroll * .00048 + node.layer * .49) * .008;
-        x += Math.sin(t * .17 + node.layer * .65) * .009;
-      }
-
-      const dx = x - pointer.x;
-      const dy = y - pointer.y;
-      const distance = Math.hypot(dx, dy);
-      const local = Math.pow(Math.max(0, 1 - distance / (ambient ? .31 : .265)), 2);
-      const movement = local * pointer.influence;
-      const safeDistance = Math.max(.001, distance);
-
-      // Nodes elastically move away from nearby interaction.
-      x += (dx / safeDistance) * movement * (ambient ? .044 : .061);
-      y += (dy / safeDistance) * movement * (ambient ? .063 : .078);
-      let waveActivation = 0;
-
-      for (const wave of waves) {
-        const age = Math.max(0, t - wave.born);
-        const r = age * (ambient ? .47 : .53);
-        const d = Math.hypot(x - wave.x, y - wave.y);
-        const proximity = Math.exp(-Math.pow((d - r) / .066, 2)) *
-          (1 - smoothstep(1.5, 2.45, age));
-        waveActivation = Math.max(waveActivation, proximity);
-        const direction = (d - r) >= 0 ? 1 : -1;
-        x += (x - wave.x) / Math.max(d, .001) * proximity * .016 * direction;
-        y += (y - wave.y) / Math.max(d, .001) * proximity * .016 * direction;
-      }
-
-      node.x = lerp(node.x, x, easing);
-      node.y = lerp(node.y, y, easing);
-      const activation = Math.max(local * pointer.influence, waveActivation);
-      node.activation = lerp(node.activation, activation, reducedMotion.matches ? 1 : .18);
-    }
-  }
-
-  function curvedPath(ctx, a, b, bend, width, height) {
-    const x1 = a.x * width, y1 = a.y * height;
-    const x2 = b.x * width, y2 = b.y * height;
-    const direction = x2 - x1;
-    const curving = bend * height;
-    const c1x = x1 + direction * .43;
-    const c2x = x2 - direction * .43;
-    const c1y = y1 + (y2 - y1) * .10 + curving;
-    const c2y = y2 - (y2 - y1) * .10 - curving;
-    ctx.moveTo(x1, y1);
-    ctx.bezierCurveTo(c1x, c1y, c2x, c2y, x2, y2);
-  }
-
-  function cubicPoint(a, b, bend, position, width, height) {
-    const x1 = a.x * width, y1 = a.y * height;
-    const x2 = b.x * width, y2 = b.y * height;
-    const direction = x2 - x1;
-    const p1 = { x: x1 + direction * .43, y: y1 + (y2 - y1) * .10 + bend * height };
-    const p2 = { x: x2 - direction * .43, y: y2 - (y2 - y1) * .10 - bend * height };
-    const u = 1 - position;
+  function interpolate(a,b,c,p){
+    const q=1-p;
     return {
-      x: u*u*u*x1 + 3*u*u*position*p1.x + 3*u*position*position*p2.x + position*position*position*x2,
-      y: u*u*u*y1 + 3*u*u*position*p1.y + 3*u*position*position*p2.y + position*position*position*y2
+      x:q*q*q*a.x +3*q*q*p*c.q1x+3*q*p*p*c.q2x+p*p*p*b.x,
+      y:q*q*q*a.y +3*q*q*p*c.q1y+3*q*p*p*c.q2y+p*p*p*b.y
     };
   }
-
-  function renderNetwork(ctx, network, size, t, pointer, waves, ambient) {
-    const width = size.width, height = size.height;
-    ctx.clearRect(0, 0, width, height);
-
-    if (!ambient) {
-      // A nearly invisible control/mediation region integrated into the lattice,
-      // never an explanatory chart or a labeled simulation.
-      const gateX = width * .49;
-      const regionWidth = width * .14;
-      const grad = ctx.createLinearGradient(gateX, 0, gateX + regionWidth, 0);
-      grad.addColorStop(0, "rgba(91,132,100,0)");
-      grad.addColorStop(.5, "rgba(91,132,100,.055)");
-      grad.addColorStop(1, "rgba(91,132,100,0)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(gateX, height * .13, regionWidth, height * .74);
-      ctx.strokeStyle = "rgba(71,112,80,.11)";
-      ctx.lineWidth = .65;
-      ctx.setLineDash([2, 7]);
+  function paint(ctx,view,ambientMode,opacity,time){
+    const {w,h}=view;
+    ctx.clearRect(0,0,w,h);
+    const hover=ambientMode?0:pointer.presence;
+    const transform=geometry(time,hover,ambientMode,view);
+    if(!ambientMode){
+      // An inner axial contour suggests regulation without illustrating any single paper.
+      const r=transform.scale*.31;
       ctx.beginPath();
-      ctx.moveTo(gateX + regionWidth * .50, height * .16);
-      ctx.lineTo(gateX + regionWidth * .50, height * .84);
+      ctx.ellipse(transform.centreX+2,transform.centreY,r*.24,r,Math.sin(time*.13)*.18,0,TAU);
+      ctx.strokeStyle='rgba(87,127,96,.075)';
+      ctx.lineWidth=.8;
       ctx.stroke();
-      ctx.setLineDash([]);
     }
-
-    // Couplings change color and strength near a pointer or impulse.
-    for (let index = 0; index < network.edges.length; index++) {
-      const edge = network.edges[index];
-      const a = network.nodes[edge.a], b = network.nodes[edge.b];
-      const distance = Math.hypot(
-        (a.x + b.x) * .5 - pointer.x,
-        (a.y + b.y) * .5 - pointer.y
-      );
-      const pointerHighlight = pointer.influence *
-        Math.pow(Math.max(0, 1 - distance / .36), 2);
-      const waveHighlight = Math.max(a.activation, b.activation) * .72;
-      const energy = Math.max(pointerHighlight, waveHighlight);
-      const strength = (ambient ? .105 : .115) +
-        edge.weight * (ambient ? .075 : .125) +
-        energy * (ambient ? .19 : .36);
-
+    for(let k=0;k<edges.length;k++){
+      const e=edges[k],a=nodes[e.a],b=nodes[e.b];
+      const front=clamp((a.z+b.z+1.8)/3.5);
+      const active=Math.max(a.activation,b.activation);
+      const thin=e.tone===2 || e.tone===3;
+      const alpha=(ambientMode?.048:.075)+(ambientMode?.095:.205)*front;
       ctx.beginPath();
-      curvedPath(ctx, a, b, edge.bend, width, height);
-      ctx.lineWidth = ambient ? .48 + energy * .35 : .65 + energy * .54;
-      ctx.strokeStyle = "rgba(61,107,78," + clamp(strength, 0, ambient ? .36 : .70) + ")";
+      const controls=bezier(ctx,a,b,e.tone);
+      ctx.lineWidth=(thin?.43:.55)+front*(ambientMode?.22:.34);
+      const value=clamp((alpha*(thin?.56:1)+active*.45)*opacity,0,1);
+      ctx.strokeStyle='rgba(45,95,66,'+value+')';
       ctx.stroke();
-
-      // Visible, continuously moving signals provide an unmistakable sense of life.
-      // Two independent streams run at different phases so the network never stalls.
-      if (!reducedMotion.matches && (index % (ambient ? 4 : 3) === 0 || energy > .20)) {
-        const pace = edge.pace * (ambient ? .115 : .185) * (1 + energy * 1.9);
-        const phase = fract(t * pace + edge.phase);
-        const p = cubicPoint(a, b, edge.bend, phase, width, height);
-        const r = (ambient ? 1.25 : 1.4) + energy * (ambient ? .75 : 1.15);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, TAU);
-        ctx.fillStyle = "rgba(48,109,76," + (ambient ? .32 + energy * .18 : .59 + energy * .30) + ")";
+      const animated=!motion.matches && (k%(ambientMode?5:3)===0 || active>.18);
+      if(animated){
+        const speed=e.speed*(ambientMode?.85:1.2)*(1+active*.7);
+        const phase=(e.phase+time*speed)%1;
+        const q=interpolate(a,b,controls,phase);
+        const size=(ambientMode?.7:1.1)+front*(ambientMode?.55:.95)+active*.9;
+        ctx.beginPath();ctx.arc(q.x,q.y,size,0,TAU);
+        ctx.fillStyle='rgba(54,112,73,'+
+          clamp((ambientMode?.15:.39)+front*(ambientMode?.14:.30)+active*.26,0,1)*opacity+')';
         ctx.fill();
       }
     }
-
-    for (const node of network.nodes) {
-      const x = node.x * width, y = node.y * height;
-      const activation = node.activation;
-      if (activation > .13) {
-        const radius = (ambient ? 13 : 22) + activation * (ambient ? 19 : 27);
-        const glow = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        glow.addColorStop(0, "rgba(66,134,88," + (activation * (ambient ? .13 : .20)) + ")");
-        glow.addColorStop(1, "rgba(66,134,88,0)");
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, TAU);
-        ctx.fill();
+    const sorted=nodes.slice().sort((a,b)=>a.z-b.z);
+    for(const n of sorted){
+      const front=clamp((n.z+1.3)/2.8);
+      const active=n.activation;
+      const rad=(ambientMode?.66:1.05)+front*(ambientMode?.8:1.35)+active*2;
+      if(active>.09 && !ambientMode){
+        const gl=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,21+active*26);
+        gl.addColorStop(0,'rgba(77,137,88,'+(active*.18)+')');
+        gl.addColorStop(1,'rgba(77,137,88,0)');
+        ctx.fillStyle=gl;ctx.beginPath();ctx.arc(n.x,n.y,21+active*26,0,TAU);ctx.fill();
       }
-
-      const baseRadius = ambient ? .95 : 1.45;
-      ctx.beginPath();
-      ctx.arc(x, y, baseRadius * node.size + activation * (ambient ? .65 : 1.5), 0, TAU);
-      ctx.fillStyle = "rgba(51,100,70," + clamp(
-        (ambient ? .28 : .47) + activation * (ambient ? .40 : .50), 0, 1
-      ) + ")";
+      ctx.beginPath();ctx.arc(n.x,n.y,rad,0,TAU);
+      ctx.fillStyle='rgba(40,91,64,'+
+        clamp(((ambientMode?.15:.30)+front*(ambientMode?.21:.44)+active*.50)*opacity,0,1)+')';
       ctx.fill();
-
-      if (!ambient && node.layer === 3 && node.id % 2 === 0) {
-        ctx.beginPath();
-        ctx.arc(x, y, 4.6 + activation * 2.6, 0, TAU);
-        ctx.lineWidth = .6;
-        ctx.strokeStyle = "rgba(68,123,85," + (.10 + activation * .30) + ")";
-        ctx.stroke();
-      }
-    }
-
-    // A physical impulse propagates outward from the click.
-    if (!reducedMotion.matches) {
-      for (const wave of waves) {
-        const age = Math.max(0, t - wave.born);
-        const radius = age * (ambient ? .47 : .53);
-        const lifetime = 1 - smoothstep(.6, 2.45, age);
-        const radiusPx = radius * Math.min(width, height);
-        ctx.beginPath();
-        ctx.arc(wave.x * width, wave.y * height, radiusPx, 0, TAU);
-        ctx.lineWidth = .8;
-        ctx.strokeStyle = "rgba(63,125,81," + (.16 * lifetime) + ")";
-        ctx.stroke();
-      }
     }
   }
 
-  function refreshLayout() {
-    const hero = document.querySelector(".hero");
-    if (hero) {
-      const rect = hero.getBoundingClientRect();
-      heroBottom = rect.bottom + window.scrollY;
+  function tick(timestamp){
+    request=0;
+    if(document.hidden)return;
+    if(!motion.matches && timestamp-lastFrame<29){request=requestAnimationFrame(tick);return}
+    const delta=prior?Math.min(.06,(timestamp-prior)/1000):0;
+    prior=timestamp;lastFrame=timestamp;
+    if(!motion.matches)t+=delta;
+    scroll=mix(scroll,desiredScroll,motion.matches?1:.09);
+    pointer.x=mix(pointer.x,pointer.tx,.10);
+    pointer.y=mix(pointer.y,pointer.ty,.10);
+    pointer.presence=mix(pointer.presence,pointer.inside&&!motion.matches?1:0,.055);
+    const heroRect=heroStage.getBoundingClientRect();
+    if(visible){
+      resize(hero,hc,foreground,heroRect.width,heroRect.height,1.5);
+      paint(hc,foreground,false,1,t);
     }
+    const reveal=ease(clamp((scroll-heroBoundary*.26)/(heroBoundary*.58)));
+    const op=reveal*(window.innerWidth<650?.83:.90);
+    ambientStage.style.opacity=String(op);
+    if(op>.001){
+      resize(ambient,ac,background,window.innerWidth,window.innerHeight,
+        window.innerWidth<650?1.16:1.32);
+      // The ambient field keeps moving independently from user interaction.
+      paint(ac,background,true,.72,t*.82+scroll*.00045);
+    }
+    if(!motion.matches)request=requestAnimationFrame(tick);
   }
-
-  function applyInteraction(pointer, x, y, active) {
-    pointer.targetX = clamp(x);
-    pointer.targetY = clamp(y);
-    pointer.active = active;
+  function play(){if(request || document.hidden)return;prior=0;request=requestAnimationFrame(tick)}
+  function layout(){
+    const h=document.querySelector('.hero');
+    if(h){const box=h.getBoundingClientRect();heroBoundary=box.bottom+window.scrollY}
+    if(motion.matches)play();
   }
-
-  function tick(stamp) {
-    requestId = 0;
-    if (!pageActive) return;
-
-    if (!reducedMotion.matches && stamp - lastDraw < 28) {
-      requestId = requestAnimationFrame(tick);
-      return;
-    }
-
-    const dt = previous ? Math.min(.06, (stamp - previous) / 1000) : 0;
-    previous = stamp;
-    lastDraw = stamp;
-    if (!reducedMotion.matches) elapsed += dt;
-    scroll = lerp(scroll, targetScroll, reducedMotion.matches ? 1 : .08);
-
-    const mobile = window.innerWidth <= 690;
-    const reveal = smoothstep(heroBottom * .30, heroBottom * .82, scroll);
-    const opacity = reveal * (mobile ? .79 : .96);
-    ambientStage.style.opacity = String(opacity);
-
-    if (heroVisible) {
-      const rect = heroStage.getBoundingClientRect();
-      sizeCanvas(heroCanvas, heroCtx, heroSize, rect.width, rect.height, mobile ? 1.35 : 1.55);
-      updateGeometry(heroNetwork, mouseHero, heroWaves, elapsed, dt, false);
-      renderNetwork(heroCtx, heroNetwork, heroSize, elapsed, mouseHero, heroWaves, false);
-    }
-
-    if (opacity > .005) {
-      sizeCanvas(ambientCanvas, ambientCtx, ambientSize,
-        window.innerWidth, window.innerHeight, mobile ? 1.13 : 1.35);
-      updateGeometry(ambientNetwork, mouseAmbient, ambientWaves, elapsed, dt, true);
-      renderNetwork(ambientCtx, ambientNetwork, ambientSize,
-        elapsed, mouseAmbient, ambientWaves, true);
-    }
-
-    if (!reducedMotion.matches) requestId = requestAnimationFrame(tick);
-  }
-
-  function start() {
-    if (requestId || !pageActive) return;
-    previous = 0;
-    requestId = requestAnimationFrame(tick);
-  }
-
-  heroStage.addEventListener("pointermove", event => {
-    if (event.pointerType === "touch") return;
-    const bounds = heroStage.getBoundingClientRect();
-    applyInteraction(mouseHero,
-      (event.clientX - bounds.left) / bounds.width,
-      (event.clientY - bounds.top) / bounds.height,
-      true);
-    if (reducedMotion.matches) start();
-  }, { passive: true });
-
-  heroStage.addEventListener("pointerleave", () => {
-    mouseHero.active = false;
-    if (reducedMotion.matches) start();
-  }, { passive: true });
-
-  heroStage.addEventListener("pointerdown", event => {
-    const bounds = heroStage.getBoundingClientRect();
-    const x = clamp((event.clientX - bounds.left) / bounds.width);
-    const y = clamp((event.clientY - bounds.top) / bounds.height);
-    heroWaves.push({ x, y, born: elapsed });
-    if (heroWaves.length > 4) heroWaves.shift();
-    if (reducedMotion.matches) start();
-  }, { passive: true });
-
-  window.addEventListener("pointermove", event => {
-    if (event.pointerType === "touch") return;
-    applyInteraction(mouseAmbient,
-      event.clientX / Math.max(1, window.innerWidth),
-      event.clientY / Math.max(1, window.innerHeight),
-      true);
-    if (reducedMotion.matches) start();
-  }, { passive: true });
-
-  window.addEventListener("pointerout", event => {
-    if (!event.relatedTarget) mouseAmbient.active = false;
-  }, { passive: true });
-
-  window.addEventListener("pointerdown", event => {
-    const y = event.clientY / Math.max(1, window.innerHeight);
-    const x = event.clientX / Math.max(1, window.innerWidth);
-    if (y < 0 || y > 1) return;
-    ambientWaves.push({ x: clamp(x), y: clamp(y), born: elapsed });
-    if (ambientWaves.length > 3) ambientWaves.shift();
-    if (reducedMotion.matches) start();
-  }, { passive: true });
-
-  window.addEventListener("scroll", () => {
-    targetScroll = window.scrollY || 0;
-    if (reducedMotion.matches) start();
-  }, { passive: true });
-
-  window.addEventListener("resize", () => {
-    refreshLayout();
-    if (reducedMotion.matches) start();
-  }, { passive: true });
-
-  document.addEventListener("visibilitychange", () => {
-    pageActive = !document.hidden;
-    if (!pageActive && requestId) {
-      cancelAnimationFrame(requestId);
-      requestId = 0;
-    }
-    if (pageActive) start();
+  heroStage.addEventListener('pointermove',e=>{
+    if(e.pointerType==='touch')return;
+    const r=heroStage.getBoundingClientRect();
+    pointer.tx=clamp((e.clientX-r.left)/r.width);
+    pointer.ty=clamp((e.clientY-r.top)/r.height);
+    pointer.inside=true;
+    if(motion.matches)play();
+  },{passive:true});
+  heroStage.addEventListener('pointerleave',()=>{
+    pointer.inside=false;
+    if(motion.matches)play();
+  },{passive:true});
+  window.addEventListener('scroll',()=>{
+    desiredScroll=window.scrollY||0;
+    if(motion.matches)play();
+  },{passive:true});
+  window.addEventListener('resize',layout,{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)play()});
+  motion.addEventListener('change',()=>{
+    if(request)cancelAnimationFrame(request);
+    request=0;play();
   });
-
-  reducedMotion.addEventListener("change", () => {
-    if (requestId) cancelAnimationFrame(requestId);
-    requestId = 0;
-    start();
-  });
-
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver(entries => {
-      heroVisible = entries[0].isIntersecting;
-      if (heroVisible) start();
-    }, { rootMargin: "150px" }).observe(heroStage);
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(entries=>{
+      visible=entries[0].isIntersecting;
+      if(visible)play();
+    },{rootMargin:'110px'}).observe(heroStage);
   }
-
-  refreshLayout();
-  start();
+  layout();play();
 })();
