@@ -8,8 +8,9 @@ The hero contains a continuously animated, three-dimensional neural manifold bui
 
 - Organic geometry rotates and subtly changes shape on its own.
 - Fine signal particles continuously move along the connections.
-- Hovering changes the sculpture's orientation and elastically displaces nearby nodes.
-- Moving away allows the structure to settle naturally.
+- Hovering anywhere in the introduction, from the navigation divider to the bottom thematic line, subtly changes the sculpture's orientation.
+- Moving closer to the sculpture makes it open up slightly and delicately alters nearby connections.
+- Moving away lets the structure settle naturally.
 - There are **no click interactions or activation buttons** in the visualization.
 
 The page background uses a much lighter, continuously moving projection of the same structure. It fades in below the hero and remains behind all content.
