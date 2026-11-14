@@ -136,7 +136,7 @@ if(ambientCanvas){
    if(!reduce.matches)at+=dt;
    amx+=(pointerTarget-amx)*.055;
    ast+=(asTarget-ast)*.045;
-   amove+=(amx-.5)*.035;
+   amove+=((amx-.5)-amove)*.045;
    rescale();paintAmbient();
    if(!reduce.matches)aframe=requestAnimationFrame(ambientTick);
   };
