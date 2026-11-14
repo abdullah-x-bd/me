@@ -19,9 +19,11 @@ This is an abstract visual exploration of connected intelligence and control, no
 
 ## Content
 
-- Seven selected publications, with expandable source lists
+- Seven selected publications, with expandable source lists and transparent source classifications
 - Eight documented external references, each classified by source type
 - Sixteen carefully selected open-source projects in a four-column editorial grid (two columns on tablets, one on mobile)
+- Fourteen selected convenings, speaking events and policy/diplomatic consultations, with precise role labels
+- Downloadable November 2026 CV (`Abdullah_X_CV_2026.pdf`), based on the October 2026 master CV and updated with the Arcadia Impact Research Associate appointment
 - Ten work experience roles and three appointments
 - Three contact email addresses
 
