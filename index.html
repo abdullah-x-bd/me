@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;450;500;550;600;650&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./styles.css?v=hero-wide-20261115">
+<link rel="stylesheet" href="./styles.css?v=projects-grid-20261115">
 <script src="./script.js" defer></script>
 <script src="./site-visual.js?v=seamless-20261115" defer></script>
 </head>
@@ -23,10 +23,10 @@
 <div class="site-shell">
 <header class="site-header" id="top">
 <a class="identity" href="#top" aria-label="Abdullah X, home"><span class="identity-mark">ax<span class="identity-dot">.</span></span><span class="identity-name">Abdullah X</span></a>
-<nav class="nav" aria-label="Main navigation"><a href="#research">Research</a><a href="#experience">Experience</a><a href="#contact">Contact <span aria-hidden="true">↗</span></a></nav>
+<nav class="nav" aria-label="Main navigation"><a href="#research">Research</a><a href="#projects">Projects</a><a href="#experience">Experience</a><a href="#contact">Contact <span aria-hidden="true">↗</span></a></nav>
 <button class="menu-button" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-navigation"><span></span><span></span></button>
 </header>
-<nav class="mobile-navigation" id="mobile-navigation" aria-label="Mobile navigation" hidden><a href="#research">Research</a><a href="#experience">Experience</a><a href="#background">Background</a><a href="#contact">Contact</a></nav>
+<nav class="mobile-navigation" id="mobile-navigation" aria-label="Mobile navigation" hidden><a href="#research">Research</a><a href="#projects">Projects</a><a href="#experience">Experience</a><a href="#background">Background</a><a href="#contact">Contact</a></nav>
 <main id="main">
 <section class="hero" aria-labelledby="hero-title">
 <div class="hero-copy">
@@ -108,7 +108,96 @@
 <span class="publication-year">2025</span>
 <a class="publication-arrow" href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5792282" target="_blank" rel="noopener noreferrer" aria-label="Open paper: Beyond Universal Metrics: A Global South-Centered Framework for Ethical AI Development">↗</a>
 </article></div>
-<div class="section-end" data-enter><a href="https://scholar.google.com/citations?user=LQVQe8YAAAAJ" target="_blank" rel="noopener noreferrer" class="inline-action">Google Scholar <span aria-hidden="true">↗</span></a><a href="https://github.com/abdullah-x-bd" target="_blank" rel="noopener noreferrer" class="inline-action">Research code <span aria-hidden="true">↗</span></a></div>
+<div class="section-end" data-enter><a href="https://scholar.google.com/citations?user=LQVQe8YAAAAJ" target="_blank" rel="noopener noreferrer" class="inline-action">Google Scholar <span aria-hidden="true">↗</span></a><a href="#projects" class="inline-action">Explore projects <span aria-hidden="true">↘</span></a></div>
+</section>
+<section class="section projects-section" id="projects" aria-labelledby="projects-title">
+<div class="section-heading" data-enter><div class="heading-label"><span>Projects</span></div><h2 id="projects-title">Selected projects</h2><p>Research tools, experiments, and working systems.</p></div>
+<div class="project-grid" aria-label="Selected open-source projects">
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/polis" target="_blank" rel="noopener noreferrer" aria-label="POLIS: open GitHub repository">
+<span class="project-area">AI SAFETY</span>
+<span class="project-heading"><span class="project-name">POLIS</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">An experimental platform for designing and testing institutions for multi-agent AI systems.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/SafeguardShift" target="_blank" rel="noopener noreferrer" aria-label="SafeguardShift: open GitHub repository">
+<span class="project-area">AI EVALUATION</span>
+<span class="project-heading"><span class="project-name">SafeguardShift</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Measuring agent behavior when verification, review, and other operational safeguards are lost.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/PipelineProof" target="_blank" rel="noopener noreferrer" aria-label="PipelineProof: open GitHub repository">
+<span class="project-area">ML RELIABILITY</span>
+<span class="project-heading"><span class="project-name">PipelineProof</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Execution-based verification of silent integrity failures in machine-learning pipelines.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/probe-scent" target="_blank" rel="noopener noreferrer" aria-label="Probe Scent: open GitHub repository">
+<span class="project-area">EVALUATION SCIENCE</span>
+<span class="project-heading"><span class="project-name">Probe Scent</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Testing how readily AI models recognize scenarios that resemble evaluations.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/unlearning" target="_blank" rel="noopener noreferrer" aria-label="Unlearning at Scale: open GitHub repository">
+<span class="project-area">MACHINE UNLEARNING</span>
+<span class="project-heading"><span class="project-name">Unlearning at Scale</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Trace-preserving training replay for reproducible, state-exact data deletion.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/markovian-circuit-tracing" target="_blank" rel="noopener noreferrer" aria-label="Markovian Circuit Tracing: open GitHub repository">
+<span class="project-area">INTERPRETABILITY</span>
+<span class="project-heading"><span class="project-name">Markovian Circuit Tracing</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Testing transformer state abstractions against known dynamics and causal ground truth.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/LLM_Persona" target="_blank" rel="noopener noreferrer" aria-label="LLM Persona: open GitHub repository">
+<span class="project-area">SOCIAL SIMULATION</span>
+<span class="project-heading"><span class="project-name">LLM Persona</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Studying when better synthetic individuals fail to produce more faithful populations.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/chile-elite-name-bias-llm-eval" target="_blank" rel="noopener noreferrer" aria-label="Status Association Audit: open GitHub repository">
+<span class="project-area">ALGORITHMIC FAIRNESS</span>
+<span class="project-heading"><span class="project-name">Status Association Audit</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Separating socioeconomic associations from their effects on consequential AI decisions.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/icr-sim" target="_blank" rel="noopener noreferrer" aria-label="ICR-OPT: open GitHub repository">
+<span class="project-area">TELECOMMUNICATIONS</span>
+<span class="project-heading"><span class="project-name">ICR-OPT</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Simulating mobile-network sharing, capacity constraints, and cooperative settlements.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/openvq" target="_blank" rel="noopener noreferrer" aria-label="OpenVQ: open GitHub repository">
+<span class="project-area">SIGNAL PROCESSING</span>
+<span class="project-heading"><span class="project-name">OpenVQ</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">A speech-quality research engine with interpretable signal and telecom diagnostics.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/queue-optimization" target="_blank" rel="noopener noreferrer" aria-label="Queue Topology Lab: open GitHub repository">
+<span class="project-area">OPERATIONS RESEARCH</span>
+<span class="project-heading"><span class="project-name">Queue Topology Lab</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Interactive simulation and optimization of finite-capacity service networks.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/PDRS" target="_blank" rel="noopener noreferrer" aria-label="Path-Dependent Radix Spaces: open GitHub repository">
+<span class="project-area">COMPUTATIONAL SYSTEMS</span>
+<span class="project-heading"><span class="project-name">Path-Dependent Radix Spaces</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Exact ranking, enumeration, and deterministic sampling of structured finite domains.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/FinSpace" target="_blank" rel="noopener noreferrer" aria-label="FinSpace: open GitHub repository">
+<span class="project-area">FINANCIAL COMPUTING</span>
+<span class="project-heading"><span class="project-name">FinSpace</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Rank-addressable financial scenarios for reproducible testing and simulation.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/public_sector-ai_use-survey" target="_blank" rel="noopener noreferrer" aria-label="Public Sector AI Survey: open GitHub repository">
+<span class="project-area">PUBLIC GOVERNANCE</span>
+<span class="project-heading"><span class="project-name">Public Sector AI Survey</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">A paired-choice study of public preferences for oversight of AI-assisted decisions.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/udise-exposure-study" target="_blank" rel="noopener noreferrer" aria-label="UDISE+ Exposure Study: open GitHub repository">
+<span class="project-area">EDUCATION DATA</span>
+<span class="project-heading"><span class="project-name">UDISE+ Exposure Study</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Reproducible data pipelines for school access, composition, and infrastructure research.</span>
+</a>
+<a class="project-item" data-enter href="https://github.com/abdullah-x-bd/sec-cyber-timing" target="_blank" rel="noopener noreferrer" aria-label="SEC Cyber Disclosure Timing: open GitHub repository">
+<span class="project-area">ECONOMIC RESEARCH</span>
+<span class="project-heading"><span class="project-name">SEC Cyber Disclosure Timing</span><span class="project-arrow" aria-hidden="true">↗</span></span>
+<span class="project-description">Analyzing cybersecurity disclosure timing and financial-market responses.</span>
+</a>
+</div>
+<div class="section-end projects-end" data-enter>
+<span class="projects-note">A selection of public research and engineering work.</span>
+<a class="inline-action" href="https://github.com/abdullah-x-bd?tab=repositories" target="_blank" rel="noopener noreferrer">All repositories <span aria-hidden="true">↗</span></a>
+</div>
 </section>
 <section class="section experience-section" id="experience" aria-labelledby="experience-title">
 <div class="section-heading" data-enter><div class="heading-label"><span>Experience</span></div><h2 id="experience-title">Work &amp; appointments</h2><p>Selected roles, past and present.</p></div>
