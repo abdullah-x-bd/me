@@ -189,7 +189,7 @@ if(ambientCanvas){
    // appears gradually as the user enters the rest of the page.
    const reveal=clamp((scrollPosition-heroHeight*.42)/(heroHeight*.56));
    ambientStage.style.opacity=String(reveal*(smallScreen()?.65:.84));
-   paintAmbient(ambientTime,pointerEnergy*.40);
+   if(reveal>.005)paintAmbient(ambientTime,pointerEnergy*.40);
    if(!reduce.matches)ambientFrame=requestAnimationFrame(ambientTick);
   };
   function startAmbient(){
