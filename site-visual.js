@@ -4,6 +4,7 @@
   const ambient = document.getElementById('ambient-field');
   if (!hero || !ambient) return;
   const heroStage = hero.parentElement;
+  const heroArea = document.querySelector('.hero') || heroStage;
   const ambientStage = ambient.parentElement;
   const hc = hero.getContext('2d', {alpha: true});
   const ac = ambient.getContext('2d', {alpha: true});
@@ -49,7 +50,7 @@
   }
   const foreground = {w:0,h:0,d:0};
   const background = {w:0,h:0,d:0};
-  const pointer = {x:.57,y:.49,tx:.57,ty:.49,presence:0,inside:false};
+  const pointer = {x:.57,y:.49,tx:.57,ty:.49,fx:.5,fy:.5,tfx:.5,tfy:.5,near:0,targetNear:0,presence:0,inside:false};
   let scroll=window.scrollY || 0, desiredScroll=scroll;
   let t=0, prior=0, lastFrame=0, request=0, visible=true;
   let heroBoundary=720;
@@ -72,8 +73,9 @@
       (ambientMode?0:(pointer.y-.5)*.24*hover);
     const cy=Math.cos(yRotation),sy=Math.sin(yRotation);
     const cx=Math.cos(xRotation),sx=Math.sin(xRotation);
+    const expansion=ambientMode?1:1+pointer.near*hover*.048;
     const scale=(ambientMode ? (mobile?.74:.89) : (mobile?.81:.94)) *
-      Math.min(view.w/3.9,view.h/2.6);
+      Math.min(view.w/3.9,view.h/2.6)*expansion;
     const centreX=view.w*(ambientMode?.67:.51),centreY=view.h*(ambientMode?.49:.50);
     for(const n of nodes){
       const bend=.075*Math.sin(n.u*TAU*1.45+time*.33+n.phase*.18);
@@ -89,11 +91,11 @@
       const depth=1.0+z2*.11;
       let projectedX=centreX+x1*scale/depth;
       let projectedY=centreY+y2*scale/depth;
-      const mouseX=pointer.x*view.w, mouseY=pointer.y*view.h;
+      const mouseX=pointer.fx*view.w, mouseY=pointer.fy*view.h;
       const dx=projectedX-mouseX, dy=projectedY-mouseY;
       const fieldRadius=Math.min(view.w,view.h)*.48;
       const distance=Math.hypot(dx,dy);
-      const push=Math.pow(Math.max(0,1-distance/fieldRadius),2)*hover;
+      const push=Math.pow(Math.max(0,1-distance/fieldRadius),2)*hover*pointer.near;
       const inv=1/Math.max(1,distance);
       const force=fieldRadius*.050*push;
       if(!ambientMode){
@@ -101,7 +103,7 @@
         projectedY+=dy*inv*force;
       }
       n.x=projectedX;n.y=projectedY;n.z=z2;
-      n.activation=ambientMode ? 0 : mix(n.activation,push,motion.matches?1:.12);
+      if(!ambientMode)n.activation=mix(n.activation,push,motion.matches?1:.12);
     }
     return {centreX,centreY,scale};
   }
@@ -184,6 +186,9 @@
     scroll=mix(scroll,desiredScroll,motion.matches?1:.09);
     pointer.x=mix(pointer.x,pointer.tx,motion.matches?1:.10);
     pointer.y=mix(pointer.y,pointer.ty,motion.matches?1:.10);
+    pointer.fx=mix(pointer.fx,pointer.tfx,motion.matches?1:.14);
+    pointer.fy=mix(pointer.fy,pointer.tfy,motion.matches?1:.14);
+    pointer.near=mix(pointer.near,pointer.inside?pointer.targetNear:0,motion.matches?1:.09);
     pointer.presence=mix(pointer.presence,pointer.inside?1:0,motion.matches?1:.09);
     const heroRect=heroStage.getBoundingClientRect();
     if(visible){
@@ -207,22 +212,36 @@
     if(h){const box=h.getBoundingClientRect();heroBoundary=box.bottom+window.scrollY}
     if(motion.matches)play();
   }
+  // The entire first-page composition, including text and footer, is
+  // one continuous hover surface. The sculpture's canvas stays in place.
   function updatePointerFromEvent(e){
-    const r=heroStage.getBoundingClientRect();
-    if(r.width<=0 || r.height<=0)return;
-    pointer.tx=clamp((e.clientX-r.left)/r.width);
-    pointer.ty=clamp((e.clientY-r.top)/r.height);
+    const area=heroArea.getBoundingClientRect();
+    const figure=heroStage.getBoundingClientRect();
+    if(area.width<=0||area.height<=0||figure.width<=0||figure.height<=0)return;
+    pointer.tx=clamp((e.clientX-area.left)/area.width);
+    pointer.ty=clamp((e.clientY-area.top)/area.height);
+    // Unclamped figure-local coordinates are intentional: the cursor can
+    // remain outside the sculpture while still tilting it subtly.
+    pointer.tfx=(e.clientX-figure.left)/figure.width;
+    pointer.tfy=(e.clientY-figure.top)/figure.height;
+    const dx=(pointer.tfx-.5)/.57;
+    const dy=(pointer.tfy-.5)/.59;
+    pointer.targetNear=Math.exp(-1.2*(dx*dx+dy*dy));
     pointer.inside=true;
     if(motion.matches)play();
   }
-  heroStage.addEventListener('pointerenter',updatePointerFromEvent,{passive:true});
-  heroStage.addEventListener('pointermove',e=>{
+  heroArea.addEventListener('pointerenter',e=>{
     if(e.pointerType==='touch')return;
     updatePointerFromEvent(e);
   },{passive:true});
-  heroStage.addEventListener('mousemove',updatePointerFromEvent,{passive:true});
-  heroStage.addEventListener('pointerleave',()=>{
+  heroArea.addEventListener('pointermove',e=>{
+    if(e.pointerType==='touch')return;
+    updatePointerFromEvent(e);
+  },{passive:true});
+  heroArea.addEventListener('mousemove',updatePointerFromEvent,{passive:true});
+  heroArea.addEventListener('pointerleave',()=>{
     pointer.inside=false;
+    pointer.targetNear=0;
     if(motion.matches)play();
   },{passive:true});
   window.addEventListener('scroll',()=>{
