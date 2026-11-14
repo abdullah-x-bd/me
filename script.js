@@ -83,4 +83,83 @@ if("IntersectionObserver" in window){
 }
 reduce.addEventListener("change",()=>{if(frame)cancelAnimationFrame(frame);frame=0;last=0;start()});
 start();
+
+
+// The same kinetic language extends across the viewport behind the page.
+// Unlike a giant document-sized canvas, this fixed viewport is inexpensive
+// to redraw and responds continuously to scrolling and pointer movements.
+const ambientCanvas=document.querySelector("#ambient-field");
+if(ambientCanvas){
+ const actx=ambientCanvas.getContext("2d",{alpha:true});
+ if(actx){
+  let aw=0,ah=0,adpr=1,aframe=0,aprev=0,at=0,amove=0,ast=0,asTarget=0,amx=.5,amt=.5;
+  let pointerTarget=.5,drawn=0;
+  const rescale=()=>{
+   const dpr=Math.min(window.devicePixelRatio||1,1.35);
+   const width=Math.max(1,window.innerWidth),height=Math.max(1,window.innerHeight);
+   if(width===aw&&height===ah&&adpr===dpr)return;
+   aw=width;ah=height;adpr=dpr;
+   ambientCanvas.width=Math.round(aw*dpr);
+   ambientCanvas.height=Math.round(ah*dpr);
+   actx.setTransform(dpr,0,0,dpr,0,0);
+  };
+  const paintAmbient=()=>{
+   actx.clearRect(0,0,aw,ah);
+   const spacing=aw>680?2.65:1.6;
+   const count=aw>680?69:46;
+   const steps=100;
+   const span=ah*1.55;
+   for(let j=0;j<count;j++){
+    const v=j/(count-1),offset=(j-count*.52)*spacing;
+    const dark=(j%13===0);
+    actx.beginPath();
+    for(let i=0;i<=steps;i++){
+     const u=i/steps;
+     const y=(u-.25)*span;
+     const swell=Math.sin(u*4.6-at*.12+ast*.00032);
+     const x=aw*(.74+.105*swell)+offset
+        +aw*.045*Math.sin(u*8.4+v*3.2+at*.075)
+        +amove*aw*.025*Math.exp(-Math.pow((u-.5)*2,2));
+     if(i===0)actx.moveTo(x,y);else actx.lineTo(x,y);
+    }
+    const weight=(1-Math.abs(v-.5)*1.3);
+    actx.strokeStyle="rgba(52,99,67,"+((dark?.092:.041)*(0.75+weight*.23))+")";
+    actx.lineWidth=dark?.7:.45;
+    actx.stroke();
+   }
+  };
+  const ambientTick=(stamp)=>{
+   aframe=0;
+   if(document.hidden)return;
+   if(!reduce.matches&&stamp-drawn<31){aframe=requestAnimationFrame(ambientTick);return}
+   const dt=aprev?Math.min(.055,(stamp-aprev)/1000):0;aprev=stamp;drawn=stamp;
+   if(!reduce.matches)at+=dt;
+   amx+=(pointerTarget-amx)*.055;
+   ast+=(asTarget-ast)*.045;
+   amove+=(amx-.5)*.035;
+   rescale();paintAmbient();
+   if(!reduce.matches)aframe=requestAnimationFrame(ambientTick);
+  };
+  const startAmbient=()=>{if(aframe||document.hidden)return;aprev=0;aframe=requestAnimationFrame(ambientTick)};
+  window.addEventListener("scroll",()=>{asTarget=window.scrollY;if(reduce.matches)startAmbient()},{passive:true});
+  window.addEventListener("pointermove",e=>{if(e.pointerType!=="touch"){pointerTarget=e.clientX/Math.max(1,window.innerWidth);if(reduce.matches)startAmbient()}},{passive:true});
+  window.addEventListener("resize",startAmbient,{passive:true});
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)startAmbient()});
+  reduce.addEventListener("change",()=>{if(aframe)cancelAnimationFrame(aframe);aframe=0;startAmbient()});
+  startAmbient();
+ }
+}
+
+// A citation disclosure always has one active ledger at a time.
+const citationLedgers=[...document.querySelectorAll("details.citation-details")];
+citationLedgers.forEach(d=>d.addEventListener("toggle",()=>{
+ if(d.open)citationLedgers.forEach(other=>{if(other!==d)other.open=false});
+}));
+document.addEventListener("pointerdown",e=>{
+ if(!e.target.closest("details.citation-details"))citationLedgers.forEach(d=>{d.open=false});
+});
+document.addEventListener("keydown",e=>{
+ if(e.key==="Escape")citationLedgers.forEach(d=>{d.open=false});
+});
+
 })();
