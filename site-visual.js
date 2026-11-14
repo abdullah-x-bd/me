@@ -67,9 +67,9 @@
   function geometry(time,hover,ambientMode,view){
     const mobile=view.w<610;
     const yRotation=.28 + time * (ambientMode?.19:.105) +
-      (ambientMode?0:(pointer.x-.5)*2.35*hover);
+      (ambientMode?0:(pointer.x-.5)*.34*hover);
     const xRotation=-.34 + Math.sin(time*.24)*.075 +
-      (ambientMode?0:(pointer.y-.5)*1.45*hover);
+      (ambientMode?0:(pointer.y-.5)*.24*hover);
     const cy=Math.cos(yRotation),sy=Math.sin(yRotation);
     const cx=Math.cos(xRotation),sx=Math.sin(xRotation);
     const scale=(ambientMode ? (mobile?.74:.89) : (mobile?.81:.94)) *
@@ -91,17 +91,17 @@
       let projectedY=centreY+y2*scale/depth;
       const mouseX=pointer.x*view.w, mouseY=pointer.y*view.h;
       const dx=projectedX-mouseX, dy=projectedY-mouseY;
-      const fieldRadius=Math.min(view.w,view.h)*.73;
+      const fieldRadius=Math.min(view.w,view.h)*.48;
       const distance=Math.hypot(dx,dy);
-      const push=Math.pow(Math.max(0,1-distance/fieldRadius),1.3)*hover;
+      const push=Math.pow(Math.max(0,1-distance/fieldRadius),2)*hover;
       const inv=1/Math.max(1,distance);
-      const force=fieldRadius*.52*push;
+      const force=fieldRadius*.050*push;
       if(!ambientMode){
-        projectedX+=dx*inv*force - dy*inv*force*.14;
-        projectedY+=dy*inv*force + dx*inv*force*.14;
+        projectedX+=dx*inv*force;
+        projectedY+=dy*inv*force;
       }
       n.x=projectedX;n.y=projectedY;n.z=z2;
-      n.activation=ambientMode ? 0 : mix(n.activation,push,motion.matches?1:.32);
+      n.activation=ambientMode ? 0 : mix(n.activation,push,motion.matches?1:.12);
     }
     return {centreX,centreY,scale};
   }
@@ -128,20 +128,6 @@
     ctx.clearRect(0,0,w,h);
     const hover=ambientMode?0:pointer.presence;
     const transform=geometry(time,hover,ambientMode,view);
-    if(!ambientMode && hover>.025){
-      const mx=pointer.x*w, my=pointer.y*h;
-      const radius=Math.min(w,h)*.26;
-      const glow=ctx.createRadialGradient(mx,my,0,mx,my,radius);
-      glow.addColorStop(0,'rgba(73,135,88,'+(.055*hover)+')');
-      glow.addColorStop(1,'rgba(73,135,88,0)');
-      ctx.fillStyle=glow;
-      ctx.fillRect(0,0,w,h);
-      ctx.beginPath();
-      ctx.arc(mx,my,5+hover*3,0,TAU);
-      ctx.strokeStyle='rgba(62,112,76,'+(.24*hover)+')';
-      ctx.lineWidth=.8;
-      ctx.stroke();
-    }
     if(!ambientMode){
       // An inner axial contour suggests regulation without illustrating any single paper.
       const r=transform.scale*.31;
@@ -160,18 +146,18 @@
       ctx.beginPath();
       const controls=bezier(ctx,a,b,e.tone);
       ctx.lineWidth=(thin?.43:.55)+front*(ambientMode?.22:.34);
-      const value=clamp((alpha*(thin?.56:1)+active*.88)*opacity,0,1);
+      const value=clamp((alpha*(thin?.56:1)+active*.16)*opacity,0,1);
       ctx.strokeStyle='rgba(45,95,66,'+value+')';
       ctx.stroke();
       const animated=!motion.matches && (k%(ambientMode?5:3)===0 || active>.18);
       if(animated){
-        const speed=e.speed*(ambientMode?2.1:1.2)*(1+active*1.65);
+        const speed=e.speed*(ambientMode?2.1:1.2)*(1+active*.20);
         const phase=(e.phase+time*speed)%1;
         const q=interpolate(a,b,controls,phase);
-        const size=(ambientMode?.7:1.1)+front*(ambientMode?.55:.95)+active*.9;
+        const size=(ambientMode?.7:1.1)+front*(ambientMode?.55:.95)+active*.25;
         ctx.beginPath();ctx.arc(q.x,q.y,size,0,TAU);
         ctx.fillStyle='rgba(54,112,73,'+
-          clamp((ambientMode?.15:.39)+front*(ambientMode?.14:.30)+active*.26,0,1)*opacity+')';
+          clamp((ambientMode?.15:.39)+front*(ambientMode?.14:.30)+active*.08,0,1)*opacity+')';
         ctx.fill();
       }
     }
@@ -179,16 +165,11 @@
     for(const n of sorted){
       const front=clamp((n.z+1.3)/2.8);
       const active=n.activation;
-      const rad=(ambientMode?.66:1.05)+front*(ambientMode?.8:1.35)+active*2;
-      if(active>.09 && !ambientMode){
-        const gl=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,21+active*26);
-        gl.addColorStop(0,'rgba(77,137,88,'+(active*.18)+')');
-        gl.addColorStop(1,'rgba(77,137,88,0)');
-        ctx.fillStyle=gl;ctx.beginPath();ctx.arc(n.x,n.y,21+active*26,0,TAU);ctx.fill();
-      }
+      const rad=(ambientMode?.66:1.05)+front*(ambientMode?.8:1.35)+active*.5;
+      
       ctx.beginPath();ctx.arc(n.x,n.y,rad,0,TAU);
       ctx.fillStyle='rgba(40,91,64,'+
-        clamp(((ambientMode?.15:.30)+front*(ambientMode?.21:.44)+active*.50)*opacity,0,1)+')';
+        clamp(((ambientMode?.15:.30)+front*(ambientMode?.21:.44)+active*.12)*opacity,0,1)+')';
       ctx.fill();
     }
   }
@@ -201,9 +182,9 @@
     prior=timestamp;lastFrame=timestamp;
     if(!motion.matches)t+=delta;
     scroll=mix(scroll,desiredScroll,motion.matches?1:.09);
-    pointer.x=mix(pointer.x,pointer.tx,motion.matches?1:.26);
-    pointer.y=mix(pointer.y,pointer.ty,motion.matches?1:.26);
-    pointer.presence=mix(pointer.presence,pointer.inside?1:0,motion.matches?1:.28);
+    pointer.x=mix(pointer.x,pointer.tx,motion.matches?1:.10);
+    pointer.y=mix(pointer.y,pointer.ty,motion.matches?1:.10);
+    pointer.presence=mix(pointer.presence,pointer.inside?1:0,motion.matches?1:.09);
     const heroRect=heroStage.getBoundingClientRect();
     if(visible){
       resize(hero,hc,foreground,heroRect.width,heroRect.height,1.5);
