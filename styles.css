@@ -296,7 +296,7 @@ html{scroll-behavior:auto}
   max-height:560px;
   overflow:hidden;
   isolation:isolate;
-  cursor:crosshair;
+  cursor:default;
   touch-action:pan-y;
 }
 .field-stage::before{
