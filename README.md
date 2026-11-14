@@ -21,6 +21,7 @@ This is an abstract visual exploration of connected intelligence and control, no
 
 - Seven selected publications, with expandable source lists
 - Eight documented external references, each classified by source type
+- Sixteen carefully selected open-source projects in a four-column editorial grid (two columns on tablets, one on mobile)
 - Ten work experience roles and three appointments
 - Three contact email addresses
 
