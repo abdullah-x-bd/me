@@ -160,7 +160,7 @@
 
     // A subdued continuation of the SAME model rather than an unrelated mesh.
     for (let j = 0; j < count; j++) {
-      const i = j * (total - 1) / (count - 1);
+      const i = Math.round(j * (total - 1) / (count - 1));
       const v = (i + .5) / total;
       ctx.beginPath();
       for (let k = 0; k <= steps; k++) {
