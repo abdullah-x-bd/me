@@ -63,9 +63,9 @@
       float lineType = a_coordinates.z;
       float time = u_time * 0.13;
       float radius = 1.38 + 0.15 * sin(3.0*t + 0.18*cos(time))
-                     + 0.35*b*cos(1.5*t + 0.10*time);
+                     + 0.35*b*cos(2.0*t + 0.10*time);
       float height = 0.38*sin(2.0*t + time*0.42)
-                     + 0.48*b*sin(1.5*t - time*0.25)
+                     + 0.48*b*sin(2.0*t - time*0.25)
                      + 0.20*cos(3.0*t + 0.8);
       vec3 p = vec3(radius*cos(t), height, radius*sin(t));
 
