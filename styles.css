@@ -368,3 +368,8 @@ html{scroll-behavior:auto}
     mask-image:linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,.65) 65%,#000);
   }
 }
+
+
+/* The full introduction is the interaction surface. There is no visual box. */
+.hero{isolation:isolate}
+.hero .field-stage::before{display:none}
