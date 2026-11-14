@@ -15,6 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;450;500;550;600;650&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./styles.css">
 <script src="./script.js" defer></script>
+<script src="./site-visual.js" defer></script>
 </head>
 <body>
 <div class="ambient-stage" aria-hidden="true"><canvas id="ambient-field"></canvas></div>
@@ -36,9 +37,11 @@
 <p class="hero-support">Founder and President of <a href="https://projectawareai.org" target="_blank" rel="noopener noreferrer">Project AWARE</a>, an international think tank focused on institutional AI safety.</p>
 <a class="inline-action" href="#research">Selected research <span aria-hidden="true">↘</span></a>
 </div>
-<div class="field-stage" aria-label="Interactive moving field of mathematical trajectories">
-<div class="field-corner field-corner-top" aria-hidden="true"></div><canvas id="field" aria-hidden="true"></canvas><div class="field-corner field-corner-bottom" aria-hidden="true"></div>
-<div class="field-caption" aria-hidden="true"><span>FIELD / 001</span><span>MOVE TO INTERACT</span></div>
+<div class="field-stage" role="group" aria-label="Conceptual visualization showing how agent behavior changes under enforced and mutable institutional safeguards">
+<div class="figure-legend" aria-hidden="true"><span>AGENTS</span><span>INSTITUTIONAL CONTROL</span><span>OUTCOMES</span></div>
+<canvas id="field" aria-hidden="true"></canvas>
+<div class="figure-bottom"><span class="figure-context">Institutional safeguards shape outcomes</span><div class="figure-controls" role="group" aria-label="Safeguard configuration"><button type="button" class="control-state" data-state="enforced" aria-pressed="true">Enforced</button><button type="button" class="control-state" data-state="mutable" aria-pressed="false">Mutable</button></div></div>
+<div class="figure-caption">Interactive conceptual model, not experimental data</div>
 </div>
 <div class="hero-footer"><span class="hairline"></span><span>AI safety <span class="faint-slash">/</span> Public policy <span class="faint-slash">/</span> Institution building</span></div>
 </section>
