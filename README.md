@@ -25,7 +25,7 @@ The visual material is a bespoke WebGL raymarched metamaterial with nested porou
 
 An actual lightweight online cursor predictor observes recent positions and velocities, predicts a near-future position, and updates its weights from prediction errors. The predicted position illuminates and locally opens the 3D material. Reversals and other unexpected movement can trigger a stronger structural response: irregular facets separate, openings appear, and the material reorganises nonlocally. Prediction state and temporary deformation persist briefly after interaction. The predictor is deliberately small and browser-local; it is not a general-purpose AI or a pretrained model.
 
-The component has no buttons, clicks or mandatory instructions. It uses a cap on rendering resolution, a reduced-motion mode, pauses offscreen, light/dark palettes, and a 2D fallback for unavailable or software-rendered WebGL contexts.
+The component has no buttons, clicks or mandatory instructions. It renders at a higher, device-aware resolution with smoother surface normals and lighting, supports reduced motion, pauses offscreen, and respects light/dark palettes. When WebGL is unavailable or software-rendered, a high-density, antialiased Canvas 2D sculptural fallback replaces the earlier sparse dot placeholder.
 
 This is an **original conceptual artwork**, not a demonstration of emergent intelligence or a scientifically validated account of learning and cognition.
 
