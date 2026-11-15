@@ -756,7 +756,7 @@ html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
 
 
 
-/* Emergence: responsive dot swarm and soft living field, in a shallow panoramic frame. */
+/* Attention Loom: layered computational textile and responsive latent folds. */
 .emergence-section{
   position:relative;
   border-bottom:1px solid var(--line);
@@ -774,7 +774,7 @@ html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
   isolation:isolate;
   overflow:hidden;
   width:100%;
-  height:clamp(184px,18vw,212px);
+  height:clamp(204px,20vw,234px);
   background:transparent;
   touch-action:pan-y;
   cursor:default;
@@ -809,12 +809,12 @@ html[data-theme="dark"] .emergence-stage::before{
 @media(max-width:800px){
   .emergence-section{padding:22px 0 29px}
   .emergence-heading{margin-bottom:10px}
-  .emergence-stage{height:190px}
+  .emergence-stage{height:192px}
 }
 @media(max-width:610px){
   .emergence-section{padding:20px 0 27px}
   .emergence-heading{font-size:24px;margin-bottom:8px}
-  .emergence-stage{height:172px}
+  .emergence-stage{height:176px}
   .emergence-stage::after{
     background:linear-gradient(90deg,var(--paper) 0%,transparent 3%,transparent 97%,var(--paper) 100%);
   }
