@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  // ATTENTION / computational textile. Responsive canvas, no WebGL or assets.
+  // ATTENTION / computational textile. Slow, composed, and locally interactive.
   const canvas=document.getElementById('emergence-field');
   const stage=canvas?.closest('.emergence-stage');
   const ctx=canvas?.getContext('2d', {alpha:true});
@@ -13,7 +13,25 @@
   const gauss=(x,s)=>Math.exp(-.5*x*x/(s*s));
   let W=0,H=0,DPR=1,t=0,last=0,raf=0,visible=true,theme='',P=null,lastDraw=0;
   let focus={inside:false,x:.43,y:.5,power:0,tx:.43,ty:.5,targetPower:0,remote1:.77,remote2:.13,r1:.77,r2:.13};
-  let resonance=[{x:.48,p:.6,r1:.12,r2:.81,age:1.2}];
+  let resonance=[];
+  // An attention connection has a visible lifespan, independent of RAF speed
+  // or how many pointermove events the browser sends.
+  let seams=[];
+  let lastSelection=-10;
+  let lastSelectedX=.43;
+  let nextAmbientSelection=2.6;
+  function selectSeam(x,y,strength){
+    const [a,b]=attentionTargets(x,y);
+    const far=Math.abs(x-a)>=Math.abs(x-b)?a:b;
+    const near=far===a?b:a;
+    for(const seam of seams) seam.release=Math.min(seam.release,t+.95);
+    seams.push({x,y,far,near,born:t,release:t+5.0,strength});
+    seams=seams.slice(-2);
+    lastSelection=t;lastSelectedX=x;
+  }
+  function seamStrength(seam){
+    return seam.strength*smooth((t-seam.born)/.82)*smooth((seam.release-t)/1.35);
+  }
   let levels=64,segments=160;
   function palette(){
     const next=document.documentElement.dataset.theme==='dark'?'dark':'light';
@@ -35,20 +53,20 @@
   // This is a continuous doubly curved woven surface, not a plot of attention weights.
   // Separate folds are dynamically coupled by the non-local focus rule below.
   function surface(u,v){
-    const autonom=t*.15;
-    const src=focus.power*gauss(u-focus.x,.058);
-    const r1=focus.power*.99*gauss(u-focus.r1,.065);
-    const r2=focus.power*.90*gauss(u-focus.r2,.055);
+    const autonom=t*.075;
+    const src=focus.power*.80*gauss(u-focus.x,.072);
+    const r1=focus.power*.73*gauss(u-focus.r1,.075);
+    const r2=focus.power*.65*gauss(u-focus.r2,.067);
     let after=0;
-    for(const e of resonance)after+=e.p*gauss(u-e.x,.075);
+    for(const e of resonance)after+=e.p*gauss(u-e.x,.085);
     const creases = .47*Math.sin(u*13.2+autonom*.55)+.32*Math.cos(u*20.2-autonom*.4)
                    +.17*Math.sin(u*34.9+autonom*.6);
     const growth = .63+.37*Math.cos(v*2.8+u*6.7+autonom);
     const folded=creases*.24+ .15*Math.sin(u*5.5+autonom*.29);
     const depth=(.35*Math.cos(v*3.2+u*12.5+autonom*.7)+folded)
-                +(.9*src+.83*r1-.65*r2)*Math.cos(v*3.0+u*3.6);
+                +(.69*src+.61*r1-.48*r2)*Math.cos(v*3.0+u*3.6);
     // Lifting the weaving at 3 separate nonlocal positions adds volume, not a ripple.
-    const lift=(src*1.47-r1*1.21+r2*1.18)*Math.sin(v*2.9+u*2.1);
+    const lift=(src*.94-r1*.85+r2*.81)*Math.sin(v*2.9+u*2.1);
     const lateral=.012*Math.sin(v*5.6+u*6.9+autonom*.54)
                    +.013*depth*Math.sin(v*2.9+u*4.1);
     const center=.5+.044*Math.sin(u*8.0+autonom*.16)+.025*Math.cos(u*16.8-autonom*.31);
@@ -65,20 +83,22 @@
     return {x:X*W,y:Y*H,z:depth,react:src+r1+r2,edge:Math.min(u,1-u)};
   }
   function attentionTargets(x,y){
-    // Relation is deliberately long-range. Distinct regions respond together.
-    let a=.09+.81*((.72-x*.71+.14*Math.sin(x*11+y*4))%1+1)%1;
-    let b=.12+.75*((x*.40+.48+.13*Math.cos(x*8-y*5))%1+1)%1;
-    if(Math.abs(a-x)<.20)a=x<.5?.83:.17;
-    if(Math.abs(b-x)<.17)b=x<.5?.72:.23;
-    if(Math.abs(a-b)<.12)b=(b+.28)%1;
-    return [clamp(a,.07,.94),clamp(b,.07,.94)];
+    // Two spatially separated anchors vary smoothly with input. No modulo
+    // arithmetic, branch switching, or wraparound discontinuity.
+    const left=.18+.055*(1-x)+.022*Math.sin(x*3.2+y*1.1);
+    const right=.79+.055*x+.022*Math.cos(x*2.8-y*1.5);
+    return [clamp(left,.12,.29),clamp(right,.71,.90)];
   }
   function ambient(){
-    const x=.50+.35*Math.sin(t*.074),y=.42+.12*Math.cos(t*.084);
+    const x=.50+.21*Math.sin(t*.043),y=.45+.06*Math.cos(t*.052);
     const [a,b]=attentionTargets(x,y);
     focus.tx=x;focus.ty=y;
     focus.remote1=a;focus.remote2=b;
-    focus.targetPower=.14+.08*(.5+.5*Math.sin(t*.29));
+    focus.targetPower=.085+.035*(.5+.5*Math.sin(t*.17));
+    if(t>=nextAmbientSelection){
+      selectSeam(x,y,.36);
+      nextAmbientSelection=t+6.8;
+    }
   }
   function paint(){
     if(!W||!H)return;
@@ -145,41 +165,47 @@
       ctx.stroke();
     }
 
-    // Attention is expressed as a lifted, many-to-many seam. These
-    // hair-thin threads belong to the textile itself, not a node graph.
-    const power=focus.power;
-    if(power>.045){
-      for(let z=0;z<2;z++){
-        const targetX=z===0?focus.r1:focus.r2;
-        const lift=(z===0?-1:1)*(H*.17+.012*W);
-        const number=z===0?24:18;
-        // Layers converge near the selected seam, then fan out across the fold.
-        for(let i=0;i<number;i++){
-          const v=(i/(number-1)-.5)*1.15;
-          const source=surface(focus.x, v*.48+focus.y*.32-.16);
-          const target=surface(targetX, (z===0?-.20:.26)+v*.65);
-          const drift=(i-(number-1)*.5)/(number-1);
-          const c1x=lerp(source.x,target.x,.33);
-          const c2x=lerp(source.x,target.x,.67);
-          const over=lift*(1-.31*Math.abs(drift));
-          const offset=drift*H*.065;
-          ctx.beginPath();ctx.moveTo(source.x,source.y);
-          ctx.bezierCurveTo(c1x,source.y+over+offset,c2x,target.y+over-offset,target.x,target.y);
-          ctx.lineWidth=(i%6===0?.84:.43);
-          ctx.strokeStyle=rgba(pal.highlight,power*(i%6===0?.25:.10)*(z===0?1:.82));
+    // Only one principal relation is visible most of the time. A former
+    // relation can overlap briefly as it fades, producing a legible transfer
+    // of attention rather than dozens of constantly changing strokes.
+    for(const seam of seams){
+      const energy=seamStrength(seam);
+      if(energy<.015)continue;
+      for(let side=0;side<2;side++){
+        // One remote fold is the primary relation. The second is a subdued echo.
+        const targetX=side===0?seam.far:seam.near;
+        const count=side===0?13:6;
+        const weight=energy*(side===0?1:.43);
+        const lift=(side===0?-1:1)*(H*.14+.009*W);
+        for(let i=0;i<count;i++){
+          const v=(i/(count-1)-.5)*1.05;
+          const source=surface(seam.x,v*.49+seam.y*.27-.14);
+          const target=surface(targetX,(side===0?-.20:.23)+v*.63);
+          const drift=(i-(count-1)*.5)/(count-1);
+          const offset=drift*H*.047;
+          const curve=lift*(1-.30*Math.abs(drift));
+          ctx.beginPath();
+          ctx.moveTo(source.x,source.y);
+          ctx.bezierCurveTo(
+            lerp(source.x,target.x,.34),source.y+curve+offset,
+            lerp(source.x,target.x,.66),target.y+curve-offset,
+            target.x,target.y
+          );
+          ctx.lineWidth=i%4===0?.92:.54;
+          ctx.strokeStyle=rgba(pal.highlight,weight*(i%4===0?.43:.24));
           ctx.stroke();
         }
-        // The seam itself catches light, but has no glowing circular node.
-        for(let v=-.62;v<=.65;v+=.11){
+        // Gold catches on the actual fibers, with no circular connection nodes.
+        for(let v=-.53;v<=.54;v+=.14){
           const q=surface(targetX,v);
-          ctx.fillStyle=rgba(pal.highlight,power*.44);
-          ctx.fillRect(q.x-.46,q.y-.55,.92,1.10);
+          ctx.fillStyle=rgba(pal.highlight,weight*.35);
+          ctx.fillRect(q.x-.40,q.y-.51,.8,1.02);
         }
       }
-      for(let v=-.62;v<=.65;v+=.11){
-        const q=surface(focus.x,v);
-        ctx.fillStyle=rgba(pal.highlight,power*.56);
-        ctx.fillRect(q.x-.54,q.y-.6,1.08,1.20);
+      for(let v=-.53;v<=.54;v+=.14){
+        const q=surface(seam.x,v);
+        ctx.fillStyle=rgba(pal.highlight,energy*.39);
+        ctx.fillRect(q.x-.46,q.y-.53,.92,1.06);
       }
     }
 
@@ -187,39 +213,58 @@
   function tick(now){
     raf=0;if(document.hidden||!visible)return;
     const dt=last?clamp((now-last)/1000,0,.06):1/60;last=now;
-    if(reduced.matches && now-lastDraw<32){schedule();return;}
+    if(reduced.matches&&now-lastDraw<38){schedule();return;}
     lastDraw=now;
     t+=dt*(reduced.matches?.45:1);
     if(!focus.inside)ambient();
-    const k=1-Math.exp(-dt*5.9), slow=1-Math.exp(-dt*3.8);
-    focus.x=lerp(focus.x,focus.tx,k);
-    focus.y=lerp(focus.y,focus.ty,k);
-    focus.r1=lerp(focus.r1,focus.remote1,slow);
-    focus.r2=lerp(focus.r2,focus.remote2,slow);
-    focus.power=lerp(focus.power,focus.targetPower,1-Math.exp(-dt*4));
-    for(const e of resonance)e.p*=Math.exp(-dt*1.25);
-    resonance=resonance.filter(e=>e.p>.012);
+    const follow=1-Math.exp(-dt*2.9);
+    const remoteFollow=1-Math.exp(-dt*1.65);
+    focus.x=lerp(focus.x,focus.tx,follow);
+    focus.y=lerp(focus.y,focus.ty,follow);
+    focus.r1=lerp(focus.r1,focus.remote1,remoteFollow);
+    focus.r2=lerp(focus.r2,focus.remote2,remoteFollow);
+    focus.power=lerp(focus.power,focus.targetPower,1-Math.exp(-dt*2.3));
+    // The active connection follows attention gradually while older ones
+    // remain as a brief visual memory of the previous region.
+    if(focus.inside&&seams.length){
+      const active=seams[seams.length-1];
+      active.x=lerp(active.x,focus.x,1-Math.exp(-dt*.82));
+      active.y=lerp(active.y,focus.y,1-Math.exp(-dt*.70));
+    }
+    for(const e of resonance)e.p*=Math.exp(-dt*.80);
+    resonance=resonance.filter(e=>e.p>.018).slice(-3);
+    seams=seams.filter(seam=>t<seam.release);
     paint();schedule();
   }
   function schedule(){if(!raf&&visible&&!document.hidden)raf=requestAnimationFrame(tick)}
   function pointer(e){
+    if(e.pointerType==='touch')return;
     const r=stage.getBoundingClientRect();if(!r.width||!r.height)return;
     const x=clamp((e.clientX-r.left)/r.width,.02,.98);
     const y=clamp((e.clientY-r.top)/r.height,.04,.96);
     const [a,b]=attentionTargets(x,y);
-    const distance=Math.abs(x-focus.tx);
-    if(distance>.03)resonance.push({x:focus.tx,p:focus.power*.58,age:t});
-    if(resonance.length>6)resonance.shift();
+    const entering=!focus.inside;
     focus.inside=true;
     focus.tx=x;focus.ty=y;
     focus.remote1=a;focus.remote2=b;
-    focus.targetPower=1;
+    focus.targetPower=.84;
+    if(entering){
+      selectSeam(x,y,1);
+      resonance=[];
+    }else if(Math.abs(x-lastSelectedX)>.155&&t-lastSelection>1.65){
+      resonance.push({x:lastSelectedX,p:.20});
+      selectSeam(x,y,1);
+    }
     schedule();
   }
   stage.addEventListener('pointerenter',pointer,{passive:true});
   stage.addEventListener('pointermove',pointer,{passive:true});
-  stage.addEventListener('pointerleave',()=>{focus.inside=false;focus.targetPower=.15;},{passive:true});
-  stage.addEventListener('pointercancel',()=>{focus.inside=false;focus.targetPower=.15;},{passive:true});
+  stage.addEventListener('pointerleave',()=>{
+    focus.inside=false;
+    focus.targetPower=.11;
+    // Let the current relation finish fading, without snapping back.
+  },{passive:true});
+  stage.addEventListener('pointercancel',()=>{focus.inside=false;focus.targetPower=.11;},{passive:true});
   function fit(){
     const r=stage.getBoundingClientRect();const ww=Math.round(r.width),hh=Math.round(r.height);
     if(!ww||!hh)return;
