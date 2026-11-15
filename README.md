@@ -17,15 +17,13 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
-### Emergence: a self-organizing network
+### Attention: computational textile and latent folds
 
-The compact, horizontal artwork in `emergence.js` implements an abstract system inspired by local reinforcement and stigmergy. Each moving dot senses nearby traces, tends to follow attractive routes, and deposits a trace of its own. Traces spread and decay. Together these simple rules generate evolving pathways, branches, loops and intersections without explicitly programmed global shapes. Overused routes can become less attractive, so the network competes, splits and reorganizes instead of settling permanently into a predefined flower, lattice, arch or diagram.
+The horizontal artwork between Projects and Engagements is an original, responsive **computational textile** implemented with lightweight Canvas 2D in `emergence.js`. The visual is a continuous fine-threaded surface with dozens of woven contours, fine cross-seams, layered translucent shading and local fold compression, not a neural network diagram, particle swarm or heavy WebGL sculpture.
 
-The cursor acts as a local environmental signal. Moving across the canvas adds a temporary influence at each visited position; nearby dots respond and may create new routes or redirect old ones. Earlier influences gradually fade, while the collective system keeps running independently. Both the moving dots and their dotted trails are rendered as **dots only**, never as line segments.
+The interaction takes inspiration from **contextual and long-range attention**: moving the pointer selects one region while two distant regions respond with linked folds. A fan of delicate connecting filaments briefly lifts out of the woven material, and changes leave a slowly fading memory. The entire textile keeps drifting and reconfiguring on its own without buttons or clicks.
 
-No clicks, controls, instructional captions, mandatory interaction or third-party animation library. The feature retains its shallow panoramic layout and supports light/dark themes, capped canvas density, offscreen pausing, and gentler animation under reduced-motion preferences.
-
-This generative visual is **not** a representation of specific empirical research findings or a scientifically validated model of a particular institution.
+The relationship model is illustrative and deterministic; the piece does not run a trained transformer, calculate real attention matrices, or represent published research data. The artwork maintains the site's restrained jade, ink and copper palette, light/dark styling, mobile-responsive shallow panoramic proportions, offscreen pausing, and reduced-motion support. It has no third-party dependencies.
 
 
 ## Content
