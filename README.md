@@ -17,6 +17,12 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
+### Research object 02
+
+Between **Projects** and **Engagements**, an independent orbital sculpture (`research-sculpture.js`) offers a denser, architectural counterpoint to the hero's neural lattice. Four interlocking, depth-aware orbital rings enclose a suspended geometric core. It responds to subtle pointer movement and scroll, and adapts its linework to light/dark mode.
+
+The visualization uses no framework or external graphics library. It caps pixel density, pauses when offscreen or the page is hidden, supports touch scrolling, and draws a static version when reduced motion is requested. It represents an abstract form, not an empirical research result.
+
 ## Content
 
 - Seven selected publications, with expandable source lists and transparent source classifications
