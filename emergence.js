@@ -1,302 +1,243 @@
 (() => {
-  "use strict";
-  /*
-   * Emergence: self-organizing pathways from local interactions.
-   * Agents sense and reinforce neighboring traces; the traces evaporate and
-   * diffuse. The shared field creates temporary routes, loops, intersections
-   * and branches, none of which is prescribed by the implementation.
-   * This is an abstract generative artwork, not research data.
-   */
-  const canvas=document.getElementById("emergence-field");
-  if(!canvas)return;
-  const stage=canvas.closest(".emergence-stage");
-  const ctx=canvas.getContext("2d",{alpha:true});
-  if(!stage||!ctx)return;
-  const motion=window.matchMedia("(prefers-reduced-motion: reduce)");
-  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  'use strict';
+  // ATTENTION / computational textile. Responsive canvas, no WebGL or assets.
+  const canvas=document.getElementById('emergence-field');
+  const stage=canvas?.closest('.emergence-stage');
+  const ctx=canvas?.getContext('2d', {alpha:true});
+  if(!canvas||!stage||!ctx)return;
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
   const TAU=Math.PI*2;
-  let seed=8219507;
-  const rand=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
-  let cw=0,ch=0,gw=0,gh=0,dpr=1;
-  let trail,nextTrail,food,nextFood,agents=[],droplets=[],nutrients=[];
-  let frame=0,clock=0,raf=0,last=0,visible=true,lastDraw=0,carry=0;
-  const pointer={inside:false,x:0,y:0};
-  let paletteKey="",palette;
-
-  function getPalette(){
-    const theme=document.documentElement.dataset.theme==="dark"?"dark":"light";
-    if(palette&&paletteKey===theme)return palette;
-    paletteKey=theme;
-    palette=theme==="dark"?{
-      dust:["rgba(116,158,127,0.22)","rgba(132,187,147,0.31)","rgba(166,230,181,0.44)"],
-      agent:["rgba(151,210,167,0.68)","rgba(192,247,202,0.87)","rgba(246,196,125,0.90)"],
-      halo:"rgba(92,160,119,0.08)",accent:"rgba(235,188,125,0.19)"
+  const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
+  const gauss=(x,s)=>Math.exp(-.5*x*x/(s*s));
+  let W=0,H=0,DPR=1,t=0,last=0,raf=0,visible=true,theme='',P=null,lastDraw=0;
+  let focus={inside:false,x:.43,y:.5,power:0,tx:.43,ty:.5,targetPower:0,remote1:.77,remote2:.13,r1:.77,r2:.13};
+  let resonance=[{x:.48,p:.6,r1:.12,r2:.81,age:1.2}];
+  let levels=64,segments=160;
+  function palette(){
+    const next=document.documentElement.dataset.theme==='dark'?'dark':'light';
+    if(next===theme&&P)return P;
+    theme=next;
+    P=theme==='dark'?{
+      fiber:[176,216,186],mid:[116,169,137],fine:[201,230,200],
+      highlight:[240,195,125],shadow:[37,82,60],background:[76,136,97],
+      glyph:[220,235,217], strength:1.12
     }:{
-      dust:["rgba(62,117,74,0.14)","rgba(58,120,75,0.24)","rgba(35,98,57,0.38)"],
-      agent:["rgba(47,101,62,0.66)","rgba(25,98,52,0.86)","rgba(159,107,63,0.93)"],
-      halo:"rgba(71,129,84,0.07)",accent:"rgba(166,121,77,0.13)"
+      fiber:[48,99,64],mid:[101,152,108],fine:[36,93,59],
+      highlight:[163,113,66],shadow:[110,156,113],background:[91,151,105],
+      glyph:[44,105,68],strength:1
     };
-    return palette;
+    return P;
   }
-  const idx=(x,y)=>y*gw+x;
-  function sense(x,y,kind){
-    const xx=Math.floor(x),yy=Math.floor(y);
-    if(xx<1||xx>=gw-1||yy<1||yy>=gh-1)return 0;
-    const k=idx(xx,yy),t=trail[k];
-    const preference=kind>.73?.24:1;
-    // High concentrations eventually become less attractive, allowing
-    // overused routes to split and neighbouring routes to compete.
-    return preference*(t-.22*t*t)+food[k]*1.8;
-  }
-  function makeAgent(x,y){
-    return {
-      x,y,angle:rand()*TAU,
-      speed:.55+rand()*.34,
-      sensor:4.4+rand()*2.4,
-      spread:.8+rand()*.35,
-      turn:.55+rand()*.30,
-      size:rand(),kind:rand()
-    };
-  }
-  function reset(){
-    gw=Math.round(clamp(cw/3.9,155,340));
-    gh=Math.round(clamp(ch/3.15,48,80));
-    const n=gw*gh;
-    trail=new Float32Array(n);nextTrail=new Float32Array(n);
-    food=new Float32Array(n);nextFood=new Float32Array(n);
-    droplets=[];agents=[];
-    nutrients=Array.from({length:10},(_,i)=>({
-      x:gw*(.075+i*.094)+((rand()+rand()+rand())-1.5)*gw*.018,
-      y:gh*(.48+.31*Math.sin(i*2.10)+((rand()+rand()+rand())-1.5)*.11)
-    }));
-    const num=Math.round(clamp(cw*1.52,980,2100));
-    for(let k=0;k<num;k++){
-      let x,y;
-      if(rand()<.39){
-        x=rand()*(gw-3)+1.5;
-        y=rand()*(gh-3)+1.5;
-      }else{
-        const colony=Math.floor(rand()*8);
-        const cx=gw*(.08+colony*.119);
-        const cy=gh*(.50+Math.sin(colony*1.43)*.19);
-        x=clamp(cx+(rand()+rand()+rand()-1.5)*gw*.10,1,gw-2);
-        y=clamp(cy+(rand()+rand()+rand()-1.5)*gh*.65,1,gh-2);
-      }
-      agents.push(makeAgent(x,y));
-    }
-    // Warm up the independent system so a network is already visible.
-    for(let i=0;i<80;i++)step();
-  }
+  const rgba=(rgb,a)=>'rgba('+rgb.join(',')+','+clamp(a,0,1).toFixed(3)+')';
 
-  function step(){
-    if(frame%7===0){
-      for(let ni=0;ni<nutrients.length;ni++){
-        const n=nutrients[ni];
-        feed(n.x+2.3*Math.sin(frame*.007+ni),
-             n.y+1.8*Math.cos(frame*.005+ni*1.43),.12);
-      }
-    }
-    if(pointer.inside&&frame%4===0)feed(pointer.x,pointer.y,.32);
-    const lessMotion=motion.matches;
-    for(let i=0;i<agents.length;i++){
-      const a=agents[i],dir=a.angle,d=a.sensor;
-      const f=sense(a.x+Math.cos(dir)*d,a.y+Math.sin(dir)*d,a.kind);
-      const l=sense(a.x+Math.cos(dir+a.spread)*d,a.y+Math.sin(dir+a.spread)*d,a.kind);
-      const r=sense(a.x+Math.cos(dir-a.spread)*d,a.y+Math.sin(dir-a.spread)*d,a.kind);
-      const turn=a.turn*(lessMotion?.65:1);
-      if(l>f&&l>r)a.angle+=turn;
-      else if(r>f&&r>l)a.angle-=turn;
-      else if(f<l&&f<r)a.angle+=(rand()-.5)*turn*2;
-      else a.angle+=(rand()-.5)*turn*.24;
-      if(rand()<.018)a.angle+=(rand()-.5)*1.28;
-      a.x+=Math.cos(a.angle)*a.speed;
-      a.y+=Math.sin(a.angle)*a.speed;
-      if(a.x<1.1||a.x>gw-2.1){
-        a.x=clamp(a.x,1.1,gw-2.1);
-        a.angle=Math.PI-a.angle+(rand()-.5)*.5;
-      }
-      if(a.y<1.1||a.y>gh-2.1){
-        a.y=clamp(a.y,1.1,gh-2.1);
-        a.angle=-a.angle+(rand()-.5)*.5;
-      }
-      const k=idx(a.x|0,a.y|0);
-      trail[k]=Math.min(3.1,trail[k]+.18);
-    }
-    // Decay and spread happen through neighboring cells only. There are
-    // no predefined paths, symbolic shapes, keyframes or global transitions.
-    for(let y=1;y<gh-1;y++){
-      const row=y*gw;
-      for(let x=1;x<gw-1;x++){
-        const k=row+x,v=trail[k];
-        const neighbour=(trail[k-1]+trail[k+1]+trail[k-gw]+trail[k+gw])*.25;
-        nextTrail[k]=Math.min(3.1,(v*.63+neighbour*.37)*.926);
-        const fv=food[k];
-        const adjacent=(food[k-1]+food[k+1]+food[k-gw]+food[k+gw])*.25;
-        nextFood[k]=(fv*.84+adjacent*.16)*.986;
-      }
-    }
-    [trail,nextTrail]=[nextTrail,trail];
-    [food,nextFood]=[nextFood,food];
-    frame++;
+  // This is a continuous doubly curved woven surface, not a plot of attention weights.
+  // Separate folds are dynamically coupled by the non-local focus rule below.
+  function surface(u,v){
+    const autonom=t*.15;
+    const src=focus.power*gauss(u-focus.x,.058);
+    const r1=focus.power*.99*gauss(u-focus.r1,.065);
+    const r2=focus.power*.90*gauss(u-focus.r2,.055);
+    let after=0;
+    for(const e of resonance)after+=e.p*gauss(u-e.x,.075);
+    const creases = .47*Math.sin(u*13.2+autonom*.55)+.32*Math.cos(u*20.2-autonom*.4)
+                   +.17*Math.sin(u*34.9+autonom*.6);
+    const growth = .63+.37*Math.cos(v*2.8+u*6.7+autonom);
+    const folded=creases*.24+ .15*Math.sin(u*5.5+autonom*.29);
+    const depth=(.35*Math.cos(v*3.2+u*12.5+autonom*.7)+folded)
+                +(.9*src+.83*r1-.65*r2)*Math.cos(v*3.0+u*3.6);
+    // Lifting the weaving at 3 separate nonlocal positions adds volume, not a ripple.
+    const lift=(src*1.47-r1*1.21+r2*1.18)*Math.sin(v*2.9+u*2.1);
+    const lateral=.012*Math.sin(v*5.6+u*6.9+autonom*.54)
+                   +.013*depth*Math.sin(v*2.9+u*4.1);
+    const center=.5+.044*Math.sin(u*8.0+autonom*.16)+.025*Math.cos(u*16.8-autonom*.31);
+    const thickness=.18+.035*Math.cos(u*10.0+autonom*.32)+.030*Math.sin(u*16.0-autonom*.4);
+    // Three stationary compression folds impart an origami-like structure.
+    // They are part of the textile, not icons and not cursor decorations.
+    const pleat1=.092*gauss(u-.215,.044)*Math.sin(v*4.35+.85);
+    const pleat2=-.112*gauss(u-.515,.052)*Math.sin(v*4.05-.48);
+    const pleat3=.078*gauss(u-.815,.054)*Math.sin(v*4.8+.61);
+    const pleat=(pleat1+pleat2+pleat3)*(W<580?.57:1);
+    const X = .055+u*.89+lateral+pleat*.19*Math.cos(v*3.4);
+    const Y = center+v*thickness*(1+.22*growth)+depth*.083+lift*(W<580?.095:.142)
+      +pleat+after*.017*Math.cos(v*5+u*8);
+    return {x:X*W,y:Y*H,z:depth,react:src+r1+r2,edge:Math.min(u,1-u)};
   }
+  function attentionTargets(x,y){
+    // Relation is deliberately long-range. Distinct regions respond together.
+    let a=.09+.81*((.72-x*.71+.14*Math.sin(x*11+y*4))%1+1)%1;
+    let b=.12+.75*((x*.40+.48+.13*Math.cos(x*8-y*5))%1+1)%1;
+    if(Math.abs(a-x)<.20)a=x<.5?.83:.17;
+    if(Math.abs(b-x)<.17)b=x<.5?.72:.23;
+    if(Math.abs(a-b)<.12)b=(b+.28)%1;
+    return [clamp(a,.07,.94),clamp(b,.07,.94)];
+  }
+  function ambient(){
+    const x=.50+.35*Math.sin(t*.074),y=.42+.12*Math.cos(t*.084);
+    const [a,b]=attentionTargets(x,y);
+    focus.tx=x;focus.ty=y;
+    focus.remote1=a;focus.remote2=b;
+    focus.targetPower=.14+.08*(.5+.5*Math.sin(t*.29));
+  }
+  function paint(){
+    if(!W||!H)return;
+    const pal=palette();
+    ctx.clearRect(0,0,W,H);
+    const light=ctx.createRadialGradient(W*.5,H*.48,H*.02,W*.5,H*.48,W*.46);
+    light.addColorStop(0,rgba(pal.background,theme==='dark'?.060:.030));
+    light.addColorStop(.72,rgba(pal.background,theme==='dark'?.019:.010));
+    light.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=light;ctx.fillRect(0,0,W,H);
 
-  function feed(gx,gy,weight){
-    const radius=4.8;
-    for(let y=Math.max(1,Math.floor(gy-radius*2));
-      y<Math.min(gh-1,Math.ceil(gy+radius*2));y++){
-      for(let x=Math.max(1,Math.floor(gx-radius*2));
-        x<Math.min(gw-1,Math.ceil(gx+radius*2));x++){
-        const distance=((x-gx)**2+(y-gy)**2)/(radius*radius);
-        const influence=Math.exp(-distance*1.4)*weight;
-        const k=idx(x,y);
-        food[k]=Math.min(5.0,food[k]+influence);
+    // Woven strands: fine smooth uninterrupted B-spline-like contour lines.
+    // Occluding ribbons between contours provide the shading of a pleated sheet.
+    const mesh=[];
+    for(let j=0;j<=levels;j++){
+      const v=(j/levels)*2-1;
+      const row=[];
+      for(let i=0;i<=segments;i++)row.push(surface(i/segments,v));
+      mesh.push(row);
+    }
+
+    for(let j=0;j<levels;j++){
+      const a=mesh[j],b=mesh[j+1];
+      // Contiguous strips create subtle 3-dimensional chiaroscuro.
+      for(let k=0;k<segments;k+=4){
+        const c=a[k+2],depth=c.z,brightness=clamp((depth+.7)*.5,0,1);
+        const edge=gauss(j/levels-.5,.51);
+        const bandIndex=j/levels;
+        const tint = (depth+.13*Math.sin(bandIndex*15+t*.12))>0?pal.mid:pal.shadow;
+        const alp=(theme==='dark'?.021:.018)+brightness*(theme==='dark'?.050:.041);
+        ctx.fillStyle=rgba(tint,alp*edge);
+        ctx.beginPath();
+        ctx.moveTo(a[k].x,a[k].y);
+        for(let n=k+1;n<=Math.min(k+4,segments);n++)ctx.lineTo(a[n].x,a[n].y);
+        for(let n=Math.min(k+4,segments);n>=k;n--)ctx.lineTo(b[n].x,b[n].y);
+        ctx.closePath();ctx.fill();
       }
     }
-  }
 
-  function interact(event){
-    if(event.pointerType==="touch")return;
-    const r=stage.getBoundingClientRect();
-    if(!r.width||!r.height)return;
-    const x=clamp((event.clientX-r.left)/r.width,0,1);
-    const y=clamp((event.clientY-r.top)/r.height,0,1);
-    const gx=x*(gw-1),gy=y*(gh-1);
-    const count=pointer.inside
-      ?Math.max(1,Math.ceil(Math.hypot(gx-pointer.x,gy-pointer.y)/2)):1;
-    for(let i=1;i<=count;i++){
-      const q=i/count;
-      feed(pointer.inside?pointer.x+(gx-pointer.x)*q:gx,
-           pointer.inside?pointer.y+(gy-pointer.y)*q:gy,1.85);
-    }
-    pointer.inside=true;pointer.x=gx;pointer.y=gy;
-    droplets.push({x:gx,y:gy,born:clock});
-    if(droplets.length>35)droplets.shift();
-    schedule();
-  }
-
-  function draw(){
-    if(!cw||!ch)return;
-    const p=getPalette();
-    ctx.clearRect(0,0,cw,ch);
-    const halo=ctx.createRadialGradient(cw*.5,ch*.53,5,cw*.5,ch*.53,cw*.48);
-    halo.addColorStop(0,p.halo);
-    halo.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=halo;ctx.fillRect(0,0,cw,ch);
-    const sx=cw/gw,sy=ch/gh;
-    // Dots are both the agents and the trace of their collective routes.
-    // The pathways are visible, but no line segments are ever drawn.
-    const dust=[[],[],[]];
-    for(let y=1;y<gh-1;y++){
-      for(let x=1;x<gw-1;x++){
-        const k=idx(x,y),t=trail[k],f=food[k];
-        if(t<.12&&f<.1)continue;
-        const level=t+f*.26>.92?2:t+f*.26>.39?1:0;
-        if(level===0&&Math.sin(x*12.989+y*78.23)<-.30)continue;
-        dust[level].push(
-          (x+.22*Math.sin(y*1.71+x*3.0))*sx,
-          (y+.22*Math.sin(x*1.13+y*2.2))*sy
-        );
-      }
-    }
-    for(let level=0;level<3;level++){
-      const cells=dust[level];if(!cells.length)continue;
+    // 65 layers of exceptionally thin filaments, with depth-aware opacity.
+    for(let j=0;j<=levels;j++){
+      const row=mesh[j], v=(j/levels)*2-1;
+      const central=1-Math.abs(v);
+      const accent=j%11===0;
+      const rgb=accent?pal.fine:(j%3===0?pal.fiber:pal.mid);
+      const baseline=(theme==='dark'?.31:.31)+central*.16;
+      ctx.lineWidth=accent?1.05:.58;
       ctx.beginPath();
-      const size=[.52,.68,.95][level];
-      for(let i=0;i<cells.length;i+=2){
-        ctx.moveTo(cells[i]+size,cells[i+1]);
-        ctx.arc(cells[i],cells[i+1],size,0,TAU);
-      }
-      ctx.fillStyle=p.dust[level];ctx.fill();
+      ctx.moveTo(row[0].x,row[0].y);
+      for(let i=1;i<=segments;i++)ctx.lineTo(row[i].x,row[i].y);
+      ctx.strokeStyle=rgba(rgb,baseline);
+      ctx.stroke();
     }
-
-    const kinds=[[],[],[]];
-    for(let i=0;i<agents.length;i++){
-      const a=agents[i],x=a.x*sx,y=a.y*sy;
-      const f=food[idx(a.x|0,a.y|0)];
-      const kind=f>.44?2:a.size>.67?1:0;
-      kinds[kind].push(x,y);
-    }
-    for(let kind=0;kind<3;kind++){
-      const coords=kinds[kind];if(!coords.length)continue;
+    // Warp threads almost perpendicular to the long filaments. These make
+    // the plane read as a physical textile rather than just wavy contour art.
+    for(let i=2;i<segments;i+=3){
+      const p=.27+.26*Math.cos(i*.091+t*.05);
+      const bright=i%15===2;
+      ctx.strokeStyle=rgba(bright?pal.fiber:pal.mid,(bright?.17:.064)*pal.strength);
+      ctx.lineWidth=bright?.75:.45;
       ctx.beginPath();
-      const radius=[.76,1.18,1.56][kind];
-      for(let k=0;k<coords.length;k+=2){
-        ctx.moveTo(coords[k]+radius,coords[k+1]);
-        ctx.arc(coords[k],coords[k+1],radius,0,TAU);
+      ctx.moveTo(mesh[0][i].x,mesh[0][i].y);
+      for(let j=2;j<=levels;j+=2)ctx.lineTo(mesh[j][i].x,mesh[j][i].y);
+      ctx.stroke();
+    }
+
+    // Attention is expressed as a lifted, many-to-many seam. These
+    // hair-thin threads belong to the textile itself, not a node graph.
+    const power=focus.power;
+    if(power>.045){
+      for(let z=0;z<2;z++){
+        const targetX=z===0?focus.r1:focus.r2;
+        const lift=(z===0?-1:1)*(H*.17+.012*W);
+        const number=z===0?24:18;
+        // Layers converge near the selected seam, then fan out across the fold.
+        for(let i=0;i<number;i++){
+          const v=(i/(number-1)-.5)*1.15;
+          const source=surface(focus.x, v*.48+focus.y*.32-.16);
+          const target=surface(targetX, (z===0?-.20:.26)+v*.65);
+          const drift=(i-(number-1)*.5)/(number-1);
+          const c1x=lerp(source.x,target.x,.33);
+          const c2x=lerp(source.x,target.x,.67);
+          const over=lift*(1-.31*Math.abs(drift));
+          const offset=drift*H*.065;
+          ctx.beginPath();ctx.moveTo(source.x,source.y);
+          ctx.bezierCurveTo(c1x,source.y+over+offset,c2x,target.y+over-offset,target.x,target.y);
+          ctx.lineWidth=(i%6===0?.84:.43);
+          ctx.strokeStyle=rgba(pal.highlight,power*(i%6===0?.25:.10)*(z===0?1:.82));
+          ctx.stroke();
+        }
+        // The seam itself catches light, but has no glowing circular node.
+        for(let v=-.62;v<=.65;v+=.11){
+          const q=surface(targetX,v);
+          ctx.fillStyle=rgba(pal.highlight,power*.44);
+          ctx.fillRect(q.x-.46,q.y-.55,.92,1.10);
+        }
       }
-      ctx.fillStyle=p.agent[kind];ctx.fill();
+      for(let v=-.62;v<=.65;v+=.11){
+        const q=surface(focus.x,v);
+        ctx.fillStyle=rgba(pal.highlight,power*.56);
+        ctx.fillRect(q.x-.54,q.y-.6,1.08,1.20);
+      }
     }
 
-    // Feedback from the cursor is temporary; the self-organized pathways
-    // persist and keep changing after the visitor moves elsewhere.
-    for(let i=droplets.length-1;i>=0;i--){
-      const d=droplets[i],age=clock-d.born;
-      if(age>1.3){droplets.splice(i,1);continue;}
-      const x=d.x*sx,y=d.y*sy;
-      const gradient=ctx.createRadialGradient(x,y,0,x,y,21+age*32);
-      const opacity=.13*Math.exp(-age*3.5);
-      gradient.addColorStop(0,p.accent.replace(/0\.\d+\)/,opacity.toFixed(3)+")"));
-      gradient.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.fillStyle=gradient;ctx.fillRect(x-70,y-70,140,140);
-    }
-  }
-
-  function resize(){
-    const r=stage.getBoundingClientRect();
-    const ww=Math.round(r.width),hh=Math.round(r.height);
-    if(!ww||!hh)return;
-    const ratio=Math.min(window.devicePixelRatio||1,1.5);
-    if(ww===cw&&hh===ch&&ratio===dpr)return;
-    cw=ww;ch=hh;dpr=ratio;
-    canvas.width=Math.round(cw*dpr);
-    canvas.height=Math.round(ch*dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    reset();draw();
   }
   function tick(now){
-    raf=0;
-    if(!visible||document.hidden)return;
-    const dt=last?clamp((now-last)/1000,0,.05):1/60;
-    last=now;clock+=dt;carry+=dt;
-    const rate=motion.matches?18:42;
-    const maxSteps=motion.matches?1:3;
-    let count=0;
-    while(carry>1/rate&&count<maxSteps){
-      step();carry-=1/rate;count++;
-    }
-    if(carry>.2)carry=.2;
-    if(motion.matches&&now-lastDraw<64){schedule();return;}
-    lastDraw=now;draw();schedule();
+    raf=0;if(document.hidden||!visible)return;
+    const dt=last?clamp((now-last)/1000,0,.06):1/60;last=now;
+    if(reduced.matches && now-lastDraw<32){schedule();return;}
+    lastDraw=now;
+    t+=dt*(reduced.matches?.45:1);
+    if(!focus.inside)ambient();
+    const k=1-Math.exp(-dt*5.9), slow=1-Math.exp(-dt*3.8);
+    focus.x=lerp(focus.x,focus.tx,k);
+    focus.y=lerp(focus.y,focus.ty,k);
+    focus.r1=lerp(focus.r1,focus.remote1,slow);
+    focus.r2=lerp(focus.r2,focus.remote2,slow);
+    focus.power=lerp(focus.power,focus.targetPower,1-Math.exp(-dt*4));
+    for(const e of resonance)e.p*=Math.exp(-dt*1.25);
+    resonance=resonance.filter(e=>e.p>.012);
+    paint();schedule();
   }
-  function schedule(){
-    if(!raf&&visible&&!document.hidden)raf=requestAnimationFrame(tick);
+  function schedule(){if(!raf&&visible&&!document.hidden)raf=requestAnimationFrame(tick)}
+  function pointer(e){
+    const r=stage.getBoundingClientRect();if(!r.width||!r.height)return;
+    const x=clamp((e.clientX-r.left)/r.width,.02,.98);
+    const y=clamp((e.clientY-r.top)/r.height,.04,.96);
+    const [a,b]=attentionTargets(x,y);
+    const distance=Math.abs(x-focus.tx);
+    if(distance>.03)resonance.push({x:focus.tx,p:focus.power*.58,age:t});
+    if(resonance.length>6)resonance.shift();
+    focus.inside=true;
+    focus.tx=x;focus.ty=y;
+    focus.remote1=a;focus.remote2=b;
+    focus.targetPower=1;
+    schedule();
   }
-  function refresh(){resize();schedule();}
-  stage.addEventListener("pointerenter",interact,{passive:true});
-  stage.addEventListener("pointermove",interact,{passive:true});
-  stage.addEventListener("pointerleave",()=>{
-    pointer.inside=false;
-  },{passive:true});
-  if("ResizeObserver" in window)new ResizeObserver(refresh).observe(stage);
-  else window.addEventListener("resize",refresh,{passive:true});
-  if("IntersectionObserver" in window){
-    new IntersectionObserver(entries=>{
-      visible=entries[0].isIntersecting;
-      if(!visible&&raf){
-        cancelAnimationFrame(raf);raf=0;last=0;carry=0;
-      }
-      if(visible)refresh();
-    },{rootMargin:"100px"}).observe(stage);
+  stage.addEventListener('pointerenter',pointer,{passive:true});
+  stage.addEventListener('pointermove',pointer,{passive:true});
+  stage.addEventListener('pointerleave',()=>{focus.inside=false;focus.targetPower=.15;},{passive:true});
+  stage.addEventListener('pointercancel',()=>{focus.inside=false;focus.targetPower=.15;},{passive:true});
+  function fit(){
+    const r=stage.getBoundingClientRect();const ww=Math.round(r.width),hh=Math.round(r.height);
+    if(!ww||!hh)return;
+    const pd=Math.min(window.devicePixelRatio||1,1.6);
+    if(ww===W&&hh===H&&pd===DPR)return;
+    W=ww;H=hh;DPR=pd;levels=W<580?40:64;segments=W<580?100:160;canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);paint();
   }
-  document.addEventListener("visibilitychange",()=>{
-    if(document.hidden){
-      if(raf)cancelAnimationFrame(raf);
-      raf=0;last=0;carry=0;
-    }else refresh();
-  });
-  window.addEventListener("site-theme-change",()=>{
-    paletteKey="";refresh();
-  });
-  motion.addEventListener?.("change",refresh);
+  function refresh(){fit();schedule()}
+  if('ResizeObserver'in window)new ResizeObserver(refresh).observe(stage);
+  else window.addEventListener('resize',refresh,{passive:true});
+  if('IntersectionObserver'in window)new IntersectionObserver(es=>{
+    visible=es[0].isIntersecting;
+    if(!visible&&raf){cancelAnimationFrame(raf);raf=0;last=0;}
+    if(visible)refresh();
+  },{rootMargin:'130px'}).observe(stage);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;last=0;}else refresh()});
+  window.addEventListener('site-theme-change',refresh);
+  reduced.addEventListener?.('change',refresh);
   refresh();
 })();
