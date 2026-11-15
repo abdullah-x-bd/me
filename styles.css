@@ -756,38 +756,65 @@ html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
 
 
 
-/* Propagation landscape: a deliberately broad and meaningful second interaction. */
-.system-section{padding:45px 0 52px;border-bottom:1px solid var(--line);scroll-margin-top:24px;position:relative}
-.system-top{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:21px}
-.system-intro h2{margin:0 0 9px;font-weight:500;letter-spacing:-.049em;line-height:1.15;font-size:clamp(24px,2.5vw,35px)}
-.system-intro p{margin:0;font-size:12px;color:var(--muted);line-height:1.55}
-.system-controls{display:flex;align-items:center;gap:3px;border:1px solid var(--line);border-radius:6px;padding:3px;flex:0 0 auto}
-.system-controls button{background:transparent;border:1px solid transparent;border-radius:4px;padding:8px 13px;min-height:34px;color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;transition:background-color .18s,color .18s,border-color .18s}
-.system-controls button:hover{color:var(--ink)}
-.system-controls button.active{background:rgba(116,152,122,.13);border-color:rgba(112,153,119,.24);color:var(--ink)}
-.system-controls button:focus-visible,.system-landscape-stage:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.system-landscape-stage{position:relative;width:100%;height:280px;overflow:hidden;touch-action:pan-y;isolation:isolate;cursor:crosshair;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.system-landscape-stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 48% 52%,rgba(129,168,135,.070),transparent 65%)}
-.system-landscape-stage>canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:1}
-.system-foot{display:flex;align-items:center;justify-content:space-between;gap:15px;padding-top:12px;color:var(--muted);font:400 9px/1.55 var(--mono)}
-.system-foot span:last-child{text-align:right;opacity:.8}
-.system-live-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-html[data-theme="dark"] .system-controls button.active{background:rgba(121,182,134,.15);border-color:rgba(152,203,160,.26);color:var(--ink)}
-html[data-theme="dark"] .system-landscape-stage::before{background:radial-gradient(ellipse at 48% 50%,rgba(85,144,103,.09),transparent 62%)}
-@media(max-width:800px){
-  .system-section{padding:46px 0 48px}
-  .system-landscape-stage{height:256px}
-  .system-top{align-items:flex-start}
+/* Emergence: quiet, wide, optically layered, without on-canvas controls. */
+.emergence-section {
+  position:relative;
+  padding:32px 0 46px;
+  border-bottom:1px solid var(--line);
+  scroll-margin-top:32px;
 }
-@media(max-width:610px){
-  .system-section{padding:39px 0 43px}
-  .system-top{display:block;margin-bottom:19px}
-  .system-intro h2{font-size:27px}
-  .system-intro p{font-size:12px;max-width:350px;margin-bottom:17px}
-  .system-controls{display:inline-flex}
-  .system-controls button{font-size:11px;padding:7px 11px}
-  .system-landscape-stage{height:226px}
-  .system-foot{font-size:8px;gap:11px}
-  .system-foot span:first-child{max-width:52%}
+.emergence-heading {
+  margin:0 0 17px;
+  font:500 clamp(22px,2.1vw,29px)/1.15 var(--sans);
+  letter-spacing:-.052em;
+  color:var(--ink);
 }
-@media(prefers-reduced-motion:reduce){.system-controls button{transition:none}}
+.emergence-stage {
+  position:relative;
+  display:block;
+  width:100%;
+  height:clamp(174px,19.5vw,228px);
+  isolation:isolate;
+  overflow:hidden;
+  cursor:default;
+  touch-action:pan-y;
+  background:transparent;
+}
+.emergence-stage::before {
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  inset:0;
+  z-index:0;
+  background:radial-gradient(ellipse 46% 68% at 50% 50%,rgba(96,150,111,.035),transparent 84%);
+}
+.emergence-stage::after {
+  content:"";
+  position:absolute;
+  z-index:2;
+  pointer-events:none;
+  inset:0;
+  background:linear-gradient(90deg,var(--paper) 0%,transparent 9%,transparent 91%,var(--paper) 100%);
+}
+.emergence-stage canvas {
+  position:absolute;
+  inset:0;
+  z-index:1;
+  display:block;
+  width:100%;
+  height:100%;
+}
+html[data-theme="dark"] .emergence-stage::before {
+  background:radial-gradient(ellipse 47% 70% at 50% 50%,rgba(130,207,154,.037),transparent 84%);
+}
+@media(max-width:800px) {
+  .emergence-section{padding:27px 0 38px}
+  .emergence-heading{margin-bottom:12px}
+  .emergence-stage{height:clamp(167px,26vw,205px)}
+}
+@media(max-width:610px) {
+  .emergence-section{padding:24px 0 34px}
+  .emergence-heading{font-size:24px;margin-bottom:9px}
+  .emergence-stage{height:175px}
+  .emergence-stage::after{background:linear-gradient(90deg,var(--paper) 0%,transparent 6%,transparent 94%,var(--paper) 100%)}
+}
