@@ -22,8 +22,8 @@ This is an abstract visual exploration of connected intelligence and control, no
 - Seven selected publications, with expandable source lists and transparent source classifications
 - Eight documented external references, each classified by source type
 - Sixteen carefully selected open-source projects in a four-column editorial grid (two columns on tablets, one on mobile)
-- Fourteen selected convenings, speaking events and policy/diplomatic consultations, with precise role labels
-- Downloadable November 2026 CV (`Abdullah_X_CV_2026.pdf`), based on the October 2026 master CV and updated with the Arcadia Impact Research Associate appointment
+- Eight selected speaking, broadcast, guest-lecture and convening engagements. Diplomatic and government consultations remain in the CV only.
+- Downloadable four-page master CV (`Abdullah_X_Master_CV_2026.pdf`), preserving the original October 24 master layout and content, with the November 2026 Arcadia Impact Research Associate appointment and October 30 NLU Delhi panel added. The legacy `Abdullah_X_CV_2026.pdf` path resolves to the same master PDF.
 - Ten work experience roles and three appointments
 - Three contact email addresses
 
