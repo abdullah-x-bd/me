@@ -17,15 +17,17 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
-### Emergence: a self-organizing network
+### Emergence: distributed representations
 
-The compact, horizontal artwork in `emergence.js` implements an abstract system inspired by local reinforcement and stigmergy. Each moving dot senses nearby traces, tends to follow attractive routes, and deposits a trace of its own. Traces spread and decay. Together these simple rules generate evolving pathways, branches, loops and intersections without explicitly programmed global shapes. Overused routes can become less attractive, so the network competes, splits and reorganizes instead of settling permanently into a predefined flower, lattice, arch or diagram.
+The compact artwork between Projects and Engagements is a dot-based, neural-inspired latent representation field (`emergence.js`). Unlike the earlier stigmergy and swarm studies, it explores how distributed nonlinear activations can generate an unexpectedly coherent global projection.
 
-The cursor acts as a local environmental signal. Moving across the canvas adds a temporary influence at each visited position; nearby dots respond and may create new routes or redirect old ones. Earlier influences gradually fade, while the collective system keeps running independently. Both the moving dots and their dotted trails are rendered as **dots only**, never as line segments.
+- A compact **8 → 14 → 8 nonlinear feature mixer** evolves latent activations from autonomous signals and live cursor input. The weights are deterministic generative parameters, **not trained weights**.
+- Approximately 5,100 to 12,600 tiny points form a diffuse spatial field. As a nonlinear **coherence threshold** is crossed, the points condense into two interacting, folded feature subspaces with depth and changing topology.
+- The coherent geometry is recomputed from the current feature state each frame. There are no scripted flowers, icons, or fixed pictures to assemble.
+- Cursor movement supplies new input to the feature mixer, changing the representation across distant regions as well as triggering short, travelling activation pulses. The whole structure continues evolving after the pointer leaves.
+- The piece uses point-only Canvas rendering, responsive dimensions, light/dark palettes, offscreen pausing, and gentler reduced-motion behaviour. There are no clicks, controls, menus, or instructional captions.
 
-No clicks, controls, instructional captions, mandatory interaction or third-party animation library. The feature retains its shallow panoramic layout and supports light/dark themes, capped canvas density, offscreen pausing, and gentler animation under reduced-motion preferences.
-
-This generative visual is **not** a representation of specific empirical research findings or a scientifically validated model of a particular institution.
+This is a **conceptual visual analogy** for distributed representations and emergent structure in neural computation, not an empirical visualization, demonstration of a trained neural network, or claim that the artwork has learned or developed intelligence.
 
 
 ## Content
