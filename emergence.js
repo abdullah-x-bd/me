@@ -359,7 +359,7 @@
     L.mode=mix(L.mode,clamp(targetMode,0,1),1-Math.exp(-dt*.9));
     // Autonomous reconstruction is visible even if no visitor interacts.
     L.phase+=dt*(reduced.matches?.025:.058)+dt*L.shock*.25;
-    if(now-lastPaint>(reduced.matches?80:30)){render();lastPaint=now;}
+    if(now-lastPaint>(reduced.matches?80:16)){render();lastPaint=now;}
     schedule();
   }
   function schedule(){if(!raf&&visible&&!document.hidden)raf=requestAnimationFrame(tick);}
