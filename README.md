@@ -28,7 +28,7 @@ Between **Projects** and **Engagements**, the horizontal artwork in `emergence.j
 
 These forms are *conceptual* expressions of how individual actions, institutions, coordination and constraints create collective structure. They do not represent a particular research result or dataset.
 
-The viewer doesn't have to click, drag, or change any modes. The kinetic installation changes formation automatically, beginning its first transition almost immediately. Pointer motion smoothly deforms the entire field with a local vortex; leaving the artwork allows the independent formation cycle to continue. Motion is time-based and spring-damped, not a series of hard switches or resets.
+The viewer doesn't have to click, drag, or change any modes. The kinetic installation changes formation automatically, beginning its first transition almost immediately. Pointer motion smoothly deforms the entire field with a local vortex; leaving the artwork allows the independent formation cycle to continue. Motion is time-based and smoothly eased rather than a series of hard switches or resets. The current implementation uses visible short-cycle transformations and coherent, whole-structure pointer adjustments rather than a local vortex. A reduced-motion preference switches to a gentler, slower sequence without freezing the artwork.
 
 The artwork preserves the site's restrained colors, works in light/dark mode, uses a compact panoramic layout (approximately 172 to 212 pixels high), pauses when hidden or offscreen, caps canvas pixel ratio, and respects reduced motion. There are no controls, instructions, duplicated titles or extra captions.
 
