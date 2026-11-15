@@ -753,3 +753,74 @@ html[data-theme="dark"] .project-arrow,
 html[data-theme="dark"] .engagement-detail h4 a span,
 html[data-theme="dark"] .contact-links a span,
 html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
+
+
+/* Research object 02: a separate suspended orbital sculpture, not a second hero. */
+.research-object-section{padding-top:99px;padding-bottom:104px}
+.research-object-section .section-heading{margin-bottom:39px}
+.research-object-section .section-heading>p{max-width:265px}
+.research-object-frame{width:100%;position:relative}
+.research-sculpture-stage{
+  position:relative;
+  width:100%;
+  height:clamp(380px,43vw,570px);
+  overflow:hidden;
+  isolation:isolate;
+  cursor:crosshair;
+  touch-action:pan-y;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+.research-sculpture-stage::before{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  z-index:0;
+  inset:2% 12%;
+  background:radial-gradient(ellipse at 50% 50%,rgba(110,153,119,.095),rgba(110,153,119,.035) 27%,transparent 64%);
+}
+.research-sculpture-stage::after{
+  content:"";
+  position:absolute;
+  z-index:0;
+  pointer-events:none;
+  inset:12% 16%;
+  background:radial-gradient(ellipse at 50% 50%,rgba(202,225,200,.075),transparent 51%);
+}
+.research-sculpture-stage>canvas{
+  display:block;
+  position:absolute;
+  inset:0;
+  z-index:1;
+  width:100%;
+  height:100%;
+}
+.research-object-caption{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:baseline;
+  padding:18px 0 0;
+  color:var(--muted);
+  font:400 10px/1.6 var(--mono);
+  letter-spacing:.008em;
+}
+.research-object-caption span:last-child{text-align:right;font-size:9px}
+html[data-theme="dark"] .research-sculpture-stage::before{
+  background:radial-gradient(ellipse at 50% 50%,rgba(105,171,119,.105),rgba(74,113,84,.045) 31%,transparent 64%);
+}
+html[data-theme="dark"] .research-sculpture-stage::after{
+  background:radial-gradient(ellipse at 50% 50%,rgba(118,173,130,.055),transparent 52%);
+}
+@media(max-width:800px){
+  .research-object-section{padding-top:83px;padding-bottom:89px}
+  .research-sculpture-stage{height:clamp(315px,58vw,465px)}
+}
+@media(max-width:610px){
+  .research-object-section{padding-top:69px;padding-bottom:77px}
+  .research-object-section .section-heading{margin-bottom:29px}
+  .research-sculpture-stage{height:clamp(300px,86vw,390px)}
+  .research-sculpture-stage::before{inset:5% 0}
+  .research-object-caption{padding-top:13px;font-size:9px}
+  .research-object-caption span:last-child{font-size:8px;max-width:52%}
+}
