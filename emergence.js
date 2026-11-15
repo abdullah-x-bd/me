@@ -83,7 +83,7 @@
         ? -.90 + 1.8 * (bay + (q < .5 ? 0 : 1)) / 4 + v * .011
         : u * .90 + v * .011;
       const y = pillar
-        ? .49 - p.seed * .90
+        ? .49 - p.s * .90
         : .47 - (lane === 2 ? .76 : .91) * Math.sin(Math.PI * q) + v * .030;
       const a = pillar ? -Math.PI / 2 : -.81 * Math.cos(Math.PI * q);
       return { x, y, a };
@@ -110,8 +110,8 @@
     }
     // Dispersal: no singular coherent silhouette; broad, spacious field.
     return {
-      x: u * .91 + .045 * Math.sin(v * 4 + p.seed * 4 + t * .40),
-      y: v * .68 + .056 * Math.sin(u * 7 + p.seed * 5 - t * .45),
+      x: u * .91 + .045 * Math.sin(v * 4 + p.z * 4 + t * .40),
+      y: v * .68 + .056 * Math.sin(u * 7 + p.s * 5 - t * .45),
       a: p.direction * 5
     };
   }
@@ -230,7 +230,7 @@
       const angle = p.a + p.direction;
       const dx = Math.cos(angle)*h, dy=Math.sin(angle)*h;
       const tone = p.tint < .09 ? 2 : p.lane===3 ? 1 : 0;
-      const bin = bins[tone*2 + (p.seed>.73 ? 1 : 0)];
+      const bin = bins[tone*2 + (p.z>.73 ? 1 : 0)];
       bin.push(x-dx,y-dy,x+dx,y+dy);
     }
     ctx.lineCap="round";
