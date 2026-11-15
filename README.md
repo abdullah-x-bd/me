@@ -17,14 +17,20 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
-### Emergence: a layered optical artwork
+### Architecture of Emergence: kinetic abstraction
 
-Between **Projects** and **Engagements**, the compact, horizontal artwork in `emergence.js` combines three semi-transparent moving line fields. Each layer is geometrically simple, but their overlaps produce continually changing interference patterns. The interaction is intended as an abstract expression of the way agency, institutional structure, and environment interact in research on complex AI systems. It is **not** a visualization of a specific empirical result.
+Between **Projects** and **Engagements**, the horizontal artwork in `emergence.js` consists of hundreds of individual luminous fragments that autonomously assemble, fragment, and reorganize through four recognizable structures:
 
-- A wide, shallow canvas presents delicate vertical waves, a second slightly misaligned engraving, and a third transverse texture layer
-- The composition moves autonomously. Hovering smoothly shifts the relationship between layers; moving away allows it to settle back
-- There are no buttons, clicks, dragging, captions, mandatory user instructions, or separate modes
-- The presentation respects light/dark themes, dynamically fits its container, caps canvas pixel density, pauses when offscreen or hidden, and respects reduced-motion preferences
+1. **Arcade:** four architectural arches and their supporting columns
+2. **Braid:** interweaving coordinated streams
+3. **Channel:** separating boundaries around a shared passage
+4. **Dispersal:** a turbulent field that ultimately rebuilds itself as architecture
+
+These forms are *conceptual* expressions of how individual actions, institutions, coordination and constraints create collective structure. They do not represent a particular research result or dataset.
+
+The viewer doesn't have to click, drag, or change any modes. The kinetic installation changes formation automatically, beginning its first transition almost immediately. Pointer motion smoothly deforms the entire field with a local vortex; leaving the artwork allows the independent formation cycle to continue. Motion is time-based and spring-damped, not a series of hard switches or resets.
+
+The artwork preserves the site's restrained colors, works in light/dark mode, uses a compact panoramic layout (approximately 172 to 212 pixels high), pauses when hidden or offscreen, caps canvas pixel ratio, and respects reduced motion. There are no controls, instructions, duplicated titles or extra captions.
 
 
 ## Content
