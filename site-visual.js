@@ -127,6 +127,7 @@
   }
   function paint(ctx,view,ambientMode,opacity,time){
     const {w,h}=view;
+    const dark=document.documentElement.dataset.theme==='dark';
     ctx.clearRect(0,0,w,h);
     const hover=ambientMode?0:pointer.presence;
     const transform=geometry(time,hover,ambientMode,view);
@@ -135,7 +136,7 @@
       const r=transform.scale*.31;
       ctx.beginPath();
       ctx.ellipse(transform.centreX+2,transform.centreY,r*.24,r,Math.sin(time*.13)*.18,0,TAU);
-      ctx.strokeStyle='rgba(87,127,96,.075)';
+      ctx.strokeStyle=dark?'rgba(157,219,166,.15)':'rgba(87,127,96,.075)';
       ctx.lineWidth=.8;
       ctx.stroke();
     }
@@ -149,7 +150,7 @@
       const controls=bezier(ctx,a,b,e.tone);
       ctx.lineWidth=(thin?.43:.55)+front*(ambientMode?.22:.34);
       const value=clamp((alpha*(thin?.56:1)+active*.16)*opacity,0,1);
-      ctx.strokeStyle='rgba(45,95,66,'+value+')';
+      ctx.strokeStyle=(dark?'rgba(161,215,170,':'rgba(45,95,66,')+value+')';
       ctx.stroke();
       const animated=!motion.matches && (k%(ambientMode?5:3)===0 || active>.18);
       if(animated){
@@ -158,7 +159,7 @@
         const q=interpolate(a,b,controls,phase);
         const size=(ambientMode?.7:1.1)+front*(ambientMode?.55:.95)+active*.25;
         ctx.beginPath();ctx.arc(q.x,q.y,size,0,TAU);
-        ctx.fillStyle='rgba(54,112,73,'+
+        ctx.fillStyle=(dark?'rgba(183,238,190,':'rgba(54,112,73,')+
           clamp((ambientMode?.15:.39)+front*(ambientMode?.14:.30)+active*.08,0,1)*opacity+')';
         ctx.fill();
       }
@@ -170,7 +171,7 @@
       const rad=(ambientMode?.66:1.05)+front*(ambientMode?.8:1.35)+active*.5;
       
       ctx.beginPath();ctx.arc(n.x,n.y,rad,0,TAU);
-      ctx.fillStyle='rgba(40,91,64,'+
+      ctx.fillStyle=(dark?'rgba(160,222,170,':'rgba(40,91,64,')+
         clamp(((ambientMode?.15:.30)+front*(ambientMode?.21:.44)+active*.12)*opacity,0,1)+')';
       ctx.fill();
     }
@@ -275,6 +276,7 @@
     if(motion.matches)play();
   },{passive:true});
   window.addEventListener('resize',layout,{passive:true});
+  window.addEventListener('site-theme-change',play);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)play()});
   motion.addEventListener('change',()=>{
     if(request)cancelAnimationFrame(request);
