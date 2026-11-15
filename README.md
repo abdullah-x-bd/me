@@ -17,16 +17,17 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
-### Propagation and containment landscape
+### Fluid propagation and containment landscape
 
-Between **Projects** and **Engagements**, a widescreen interactive landscape (`risk-landscape.js`) replaces the previous orbital sculpture. This is an intentionally schematic demonstration of risk propagation and institutional safeguards, not an empirical model or risk forecast.
+Between **Projects** and **Engagements**, a compact, widescreen interactive field (`risk-landscape.js`) shows an illustrative difference between unchecked propagation and containment. It deliberately avoids the neural nodes, orbiting geometry, and three-dimensional structures of the hero.
 
-- Raised blocks represent parts of an interdependent system; amber pulses visualize how disturbances spread
-- Visitors can click, tap, or drag across the field to introduce disturbances
-- **Uncontained** allows the pulse to spread through the whole system; **With safeguards** introduces a green containment boundary that blocks most propagation across it
-- The simulation supports pointer and keyboard activation, responsive layout, automatic light/dark palettes, capped pixel density, reduced-motion rendering, and pausing while offscreen
-- Unlike the original responsive neural manifold in the hero, this second piece changes the displayed outcome through an explicit visitor decision
+- Smooth horizontal contours depict possible propagation pathways; an amber traveling wave shows a disturbance
+- Pointer movement deforms the contours like an elastic fabric, while clicking, tapping, or dragging launches additional ripples
+- **Uncontained** lets pulses spread across the entire field; **With safeguards** introduces a soft green vertical seam and attenuates waves beyond it
+- The boundary transitions smoothly instead of abruptly replacing the view; automatic pulses keep the scene alive while idle
+- The implementation uses requestAnimationFrame with time-based easing, precomputed horizontal positions, high-DPI capping, offscreen pausing, dark/light palettes and reduced-motion support
 
+The field is a **conceptual illustration**, not an empirical simulation or forecast.
 
 ## Content
 
