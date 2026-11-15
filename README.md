@@ -17,15 +17,15 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
-### Emergence: living field
+### Emergence: locally responsive living swarm
 
-The shallow horizontal sculpture in `emergence.js` is a generative artwork inspired by the broader themes of emergence, collective agency, interdependence and adaptation. It is **not** a plot of research data or a simulation of measured findings.
+A shallow panoramic artwork, implemented in `emergence.js`, explores the broad themes of emergence, collective agency, memory and interdependence. It is a generative abstract artwork, not a visualization of research data or a predictive simulation.
 
-The field consists of hundreds of independently moving strokes that cycle through four collective states: a breathing membrane, distinct gathering colonies, coordinated migrating streams, and free dispersal. The structure is never stationary and emits its own travelling activity pulses.
+The entire field is made of **soft dots rather than line fragments**. Seven overlapping, irregular particle colonies autonomously breathe, migrate, disperse and recombine. Activity also arises spontaneously from within the system. No repeating flower, arch, orbital ring or other fixed symbolic figure is drawn.
 
-The interaction is intentional rather than purely geometric: entering the artwork makes a group of fragments gather into a temporary, petal-like bloom near the pointer while a signal propagates through the rest of the field. Moving the cursor can trigger additional responses, and leaving the stage does not reset the system: residual activity fades gradually as the autonomous behaviour continues.
+**Every cursor location responds independently.** Whatever particles are in the area gently gather and become brighter and more active. A spatial activity grid spreads signals to neighbouring regions, so responses travel through the wider field. The grid decays gradually, leaving an observable wake as the cursor moves elsewhere or leaves. Hovering does not trap the same predefined subset of particles.
 
-There are no buttons, clicks, modes, or explanatory captions. The artwork remains compact and panoramic, uses batched canvas rendering for performance, adapts to desktop and mobile sizes and the site's light/dark themes, and lowers its animation intensity under reduced-motion preferences rather than stopping entirely.
+There are no clicks, modes, buttons, instructions or extra labels. The site keeps its original hero sculpture and the compact horizontal composition, with responsive sizing, native light/dark colours, offscreen pausing and a gentler reduced-motion animation.
 
 
 ## Content
