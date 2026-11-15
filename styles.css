@@ -11,10 +11,8 @@ button{font:inherit}
 .skip-link:focus{top:10px}
 .site-shell{max-width:1540px;margin:auto;padding:0 var(--side)}
 .site-header{display:flex;align-items:center;justify-content:space-between;min-height:89px;border-bottom:1px solid var(--line);gap:25px}
-.identity{display:inline-flex;align-items:center;gap:16px;flex:0 0 auto}
-.identity-mark{position:relative;width:32px;height:32px;display:grid;place-items:center;border:1px solid #cfd5cd;border-radius:4px;font-size:15px;font-weight:600;letter-spacing:-.09em;padding-right:2px}
-.identity-dot{color:var(--accent)}
-.identity-name{font-size:13px;font-weight:600;letter-spacing:-.015em}
+.identity{display:inline-flex;align-items:center;flex:0 0 auto}
+.identity-name{font-size:15px;font-weight:600;letter-spacing:-.025em}
 .header-location{display:flex;align-items:center;gap:10px;margin-left:auto;margin-right:auto;color:var(--muted);font-size:11px}
 .live-indicator{width:5px;height:5px;border-radius:50%;background:#779c7d}
 .nav{display:flex;align-items:center;gap:36px}
@@ -660,3 +658,98 @@ html{scroll-behavior:auto}
 @media(max-width:700px){
   .engagements-forums .engagement-row{min-height:auto;padding:18px 0}
 }
+
+/* Quiet text identity, manual theme switch, and a complete dark reading palette. */
+.theme-toggle{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin-left:-18px;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;transition:background-color .2s ease,color .2s ease}
+.theme-toggle:hover{background:rgba(116,143,119,.10);color:var(--accent)}
+.theme-icon{width:18px;height:18px;display:block}
+.theme-icon-sun{display:none}
+html[data-theme="dark"] .theme-icon-moon{display:none}
+html[data-theme="dark"] .theme-icon-sun{display:block}
+@media(max-width:610px){
+  .site-header{gap:12px}
+  .theme-toggle{margin-left:auto;margin-right:-3px}
+  .menu-button{margin-left:0}
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#111915;
+  --ink:#e7eee7;
+  --muted:#a3b1a5;
+  --line:#344339;
+  --accent:#abd6b2;
+}
+html[data-theme="dark"] ::selection{background:#345943;color:#f1f8f0}
+html[data-theme="dark"] .skip-link{color:#111915;background:var(--ink)}
+html[data-theme="dark"] .nav a{color:#b0c0b3}
+html[data-theme="dark"] .nav a:last-child{color:var(--ink)}
+html[data-theme="dark"] .nav a:hover{color:var(--accent)}
+html[data-theme="dark"] .hero-overline,
+html[data-theme="dark"] .hero-support,
+html[data-theme="dark"] .hero-footer,
+html[data-theme="dark"] .section-heading>p,
+html[data-theme="dark"] .heading-label,
+html[data-theme="dark"] .publication-index,
+html[data-theme="dark"] .publication-type,
+html[data-theme="dark"] .publication-year,
+html[data-theme="dark"] .research-metric span,
+html[data-theme="dark"] .metric-method,
+html[data-theme="dark"] .experience-row>span:nth-child(2),
+html[data-theme="dark"] .experience-row>span:last-child,
+html[data-theme="dark"] .experience-subhead span,
+html[data-theme="dark"] .contact-intro,
+html[data-theme="dark"] .education-row>span:last-child,
+html[data-theme="dark"] .footer,
+html[data-theme="dark"] .project-description,
+html[data-theme="dark"] .projects-note,
+html[data-theme="dark"] .research-context-method,
+html[data-theme="dark"] .engagement-date,
+html[data-theme="dark"] .engagement-organization,
+html[data-theme="dark"] .engagements-forums .engagement-organization,
+html[data-theme="dark"] .engagements-note,
+html[data-theme="dark"] .no-current-citations,
+html[data-theme="dark"] .reference-links li small,
+html[data-theme="dark"] .network-caption,
+html[data-theme="dark"] .network-caption span:last-child,
+html[data-theme="dark"] .faint-slash{color:var(--muted)}
+html[data-theme="dark"] .hero-support a,
+html[data-theme="dark"] .citation-details summary,
+html[data-theme="dark"] .reference-label,
+html[data-theme="dark"] .project-area,
+html[data-theme="dark"] .research-context-intro,
+html[data-theme="dark"] .engagements-category,
+html[data-theme="dark"] .engagement-role,
+html[data-theme="dark"] .engagements-forums .engagement-role,
+html[data-theme="dark"] .cv-contact-link,
+html[data-theme="dark"] .email-list a,
+html[data-theme="dark"] .footer a{color:#bbd8c0}
+html[data-theme="dark"] .project-name,
+html[data-theme="dark"] .engagement-detail h4{color:var(--ink)}
+html[data-theme="dark"] .project-item:hover .project-name,
+html[data-theme="dark"] .project-item:focus-visible .project-name,
+html[data-theme="dark"] .engagement-detail h4 a:hover{color:var(--accent)}
+html[data-theme="dark"] .publication:hover,
+html[data-theme="dark"] .experience-row:hover,
+html[data-theme="dark"] .project-item:hover,
+html[data-theme="dark"] .project-item:focus-visible,
+html[data-theme="dark"] .engagement-row:hover,
+html[data-theme="dark"] .cv-contact-link:hover{background:rgba(150,205,157,.075)}
+html[data-theme="dark"] .research-metrics,
+html[data-theme="dark"] .experience-list,
+html[data-theme="dark"] .experience-group .experience-list,
+html[data-theme="dark"] .project-grid,
+html[data-theme="dark"] .research-context,
+html[data-theme="dark"] .engagements-category,
+html[data-theme="dark"] .engagements-forums .engagements-column,
+html[data-theme="dark"] .cv-contact-link{border-color:var(--line)}
+html[data-theme="dark"] .citation-details summary{border-bottom-color:#657f6a}
+html[data-theme="dark"] .citation-panel{background:#1a251e;border-color:#465c4c;box-shadow:0 16px 45px rgba(0,0,0,.40);color:var(--ink)}
+html[data-theme="dark"] .reference-label-secondary{border-color:var(--line)}
+html[data-theme="dark"] .inline-action,
+html[data-theme="dark"] .email-link{border-color:#6d9476}
+html[data-theme="dark"] .hairline{background:#688b71}
+html[data-theme="dark"] .publication-arrow,
+html[data-theme="dark"] .project-arrow,
+html[data-theme="dark"] .engagement-detail h4 a span,
+html[data-theme="dark"] .contact-links a span,
+html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
