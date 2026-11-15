@@ -756,47 +756,38 @@ html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
 
 
 
-/* Compact, untitled orbital research sculpture between projects and engagements. */
-.research-object-section{padding:31px 0 37px;border-bottom:1px solid var(--line);scroll-margin-top:30px}
-.research-object-frame{position:relative;width:100%;max-width:490px;margin:0 auto}
-.research-sculpture-stage{
-  position:relative;
-  width:100%;
-  height:260px;
-  overflow:hidden;
-  isolation:isolate;
-  cursor:grab;
-  touch-action:pan-y;
-  border:0;
-  outline-offset:4px;
-}
-.research-sculpture-stage:active{cursor:grabbing}
-.research-sculpture-stage::before{
-  content:"";
-  position:absolute;
-  z-index:0;
-  pointer-events:none;
-  inset:7% 4%;
-  background:radial-gradient(ellipse at 50% 50%,rgba(110,153,119,.075),transparent 62%);
-}
-.research-sculpture-stage>canvas{
-  position:absolute;
-  inset:0;
-  z-index:1;
-  width:100%;
-  height:100%;
-  display:block;
-}
-html[data-theme="dark"] .research-sculpture-stage::before{
-  background:radial-gradient(ellipse at 50% 50%,rgba(118,173,130,.085),transparent 63%);
-}
+/* Propagation landscape: a deliberately broad and meaningful second interaction. */
+.system-section{padding:56px 0 60px;border-bottom:1px solid var(--line);scroll-margin-top:24px;position:relative}
+.system-top{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:21px}
+.system-intro h2{margin:0 0 9px;font-weight:500;letter-spacing:-.049em;line-height:1.15;font-size:clamp(24px,2.5vw,35px)}
+.system-intro p{margin:0;font-size:12px;color:var(--muted);line-height:1.55}
+.system-controls{display:flex;align-items:center;gap:3px;border:1px solid var(--line);border-radius:6px;padding:3px;flex:0 0 auto}
+.system-controls button{background:transparent;border:1px solid transparent;border-radius:4px;padding:8px 13px;min-height:34px;color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;transition:background-color .18s,color .18s,border-color .18s}
+.system-controls button:hover{color:var(--ink)}
+.system-controls button.active{background:rgba(116,152,122,.13);border-color:rgba(112,153,119,.24);color:var(--ink)}
+.system-controls button:focus-visible,.system-landscape-stage:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.system-landscape-stage{position:relative;width:100%;height:300px;overflow:hidden;touch-action:pan-y;isolation:isolate;cursor:crosshair;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.system-landscape-stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 48% 50%,rgba(129,168,135,.095),transparent 60%)}
+.system-landscape-stage>canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.system-foot{display:flex;align-items:center;justify-content:space-between;gap:15px;padding-top:12px;color:var(--muted);font:400 9px/1.55 var(--mono)}
+.system-foot span:last-child{text-align:right;opacity:.8}
+.system-live-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+html[data-theme="dark"] .system-controls button.active{background:rgba(121,182,134,.15);border-color:rgba(152,203,160,.26);color:var(--ink)}
+html[data-theme="dark"] .system-landscape-stage::before{background:radial-gradient(ellipse at 48% 50%,rgba(85,144,103,.09),transparent 62%)}
 @media(max-width:800px){
-  .research-object-section{padding:26px 0 33px}
-  .research-object-frame{max-width:450px}
-  .research-sculpture-stage{height:245px}
+  .system-section{padding:46px 0 48px}
+  .system-landscape-stage{height:275px}
+  .system-top{align-items:flex-start}
 }
 @media(max-width:610px){
-  .research-object-section{padding:22px 0 28px}
-  .research-object-frame{max-width:360px}
-  .research-sculpture-stage{height:216px}
+  .system-section{padding:39px 0 43px}
+  .system-top{display:block;margin-bottom:19px}
+  .system-intro h2{font-size:27px}
+  .system-intro p{font-size:12px;max-width:350px;margin-bottom:17px}
+  .system-controls{display:inline-flex}
+  .system-controls button{font-size:11px;padding:7px 11px}
+  .system-landscape-stage{height:246px}
+  .system-foot{font-size:8px;gap:11px}
+  .system-foot span:first-child{max-width:52%}
 }
+@media(prefers-reduced-motion:reduce){.system-controls button{transition:none}}
