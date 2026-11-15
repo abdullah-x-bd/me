@@ -17,20 +17,15 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
-### Architecture of Emergence: kinetic abstraction
+### Emergence: living field
 
-Between **Projects** and **Engagements**, the horizontal artwork in `emergence.js` consists of hundreds of individual luminous fragments that autonomously assemble, fragment, and reorganize through four recognizable structures:
+The shallow horizontal sculpture in `emergence.js` is a generative artwork inspired by the broader themes of emergence, collective agency, interdependence and adaptation. It is **not** a plot of research data or a simulation of measured findings.
 
-1. **Arcade:** four architectural arches and their supporting columns
-2. **Braid:** interweaving coordinated streams
-3. **Channel:** separating boundaries around a shared passage
-4. **Dispersal:** a turbulent field that ultimately rebuilds itself as architecture
+The field consists of hundreds of independently moving strokes that cycle through four collective states: a breathing membrane, distinct gathering colonies, coordinated migrating streams, and free dispersal. The structure is never stationary and emits its own travelling activity pulses.
 
-These forms are *conceptual* expressions of how individual actions, institutions, coordination and constraints create collective structure. They do not represent a particular research result or dataset.
+The interaction is intentional rather than purely geometric: entering the artwork makes a group of fragments gather into a temporary, petal-like bloom near the pointer while a signal propagates through the rest of the field. Moving the cursor can trigger additional responses, and leaving the stage does not reset the system: residual activity fades gradually as the autonomous behaviour continues.
 
-The viewer doesn't have to click, drag, or change any modes. The kinetic installation changes formation automatically, beginning its first transition almost immediately. Pointer motion smoothly deforms the entire field with a local vortex; leaving the artwork allows the independent formation cycle to continue. Motion is time-based and smoothly eased rather than a series of hard switches or resets. The current implementation uses visible short-cycle transformations and coherent, whole-structure pointer adjustments rather than a local vortex. A reduced-motion preference switches to a gentler, slower sequence without freezing the artwork.
-
-The artwork preserves the site's restrained colors, works in light/dark mode, uses a compact panoramic layout (approximately 172 to 212 pixels high), pauses when hidden or offscreen, caps canvas pixel ratio, and respects reduced motion. There are no controls, instructions, duplicated titles or extra captions.
+There are no buttons, clicks, modes, or explanatory captions. The artwork remains compact and panoramic, uses batched canvas rendering for performance, adapts to desktop and mobile sizes and the site's light/dark themes, and lowers its animation intensity under reduced-motion preferences rather than stopping entirely.
 
 
 ## Content
