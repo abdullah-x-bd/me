@@ -14,10 +14,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;450;500;550;600;650&display=swap" rel="stylesheet">
 <script>(function(){var saved;try{saved=localStorage.getItem("ax-theme")}catch(e){}var dark=saved==="dark"||(saved!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=dark?"dark":"light"})();</script>
-<link rel="stylesheet" href="./styles.css?v=fluid-landscape-20261115">
+<link rel="stylesheet" href="./styles.css?v=emergence-20261115">
 <script src="./script.js?v=theme-20261115" defer></script>
 <script src="./site-visual.js?v=theme-20261115" defer></script>
-<script src="./risk-landscape.js?v=fluid-landscape-20261115" defer></script>
+<script src="./emergence.js?v=emergence-20261115" defer></script>
 </head>
 <body>
 <div class="ambient-stage" aria-hidden="true"><canvas id="ambient-field"></canvas></div>
@@ -199,25 +199,11 @@
 <a class="inline-action" href="https://github.com/abdullah-x-bd?tab=repositories" target="_blank" rel="noopener noreferrer">All repositories <span aria-hidden="true">↗</span></a>
 </div>
 </section>
-<section class="system-section" id="research-object" aria-labelledby="system-title">
-<div class="system-top" data-enter>
-<div class="system-intro">
-<h2 id="system-title">How failures travel<span class="period">.</span></h2>
-<p>A conceptual exploration of propagation and institutional safeguards.</p>
+<section class="emergence-section" id="research-object" aria-labelledby="emergence-title">
+<h2 class="emergence-heading" id="emergence-title" data-enter>Emergence<span class="period">.</span></h2>
+<div class="emergence-stage" data-enter role="img" aria-label="An abstract optical artwork of three slowly moving, translucent line fields. Their overlapping patterns form new structures, responding gently to cursor movement.">
+<canvas id="emergence-field" aria-hidden="true"></canvas>
 </div>
-<div class="system-controls" role="group" aria-label="Compare how safeguards change propagation">
-<button type="button" data-landscape-mode="uncontained" class="active" aria-pressed="true">Uncontained</button>
-<button type="button" data-landscape-mode="safeguarded" aria-pressed="false">With safeguards</button>
-</div>
-</div>
-<div class="system-landscape-stage" role="button" tabindex="0" aria-label="Interactive landscape of system elements. Click, tap, or drag to introduce a disturbance. Use Enter or Space to activate with the keyboard.">
-<canvas id="system-landscape" aria-hidden="true"></canvas>
-</div>
-<div class="system-foot">
-<span>Move to shape the field · click or drag to disturb</span>
-<span>Illustrative model, not a risk forecast</span>
-</div>
-<p class="system-live-status" id="system-landscape-status" role="status" aria-live="polite">Uncontained propagation selected. Click the landscape to introduce a disturbance.</p>
 </section>
 <section class="section engagements-section" id="engagements" aria-labelledby="engagements-title">
 <div class="section-heading" data-enter>
