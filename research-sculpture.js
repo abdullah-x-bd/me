@@ -21,7 +21,7 @@
 
   let width = 0, height = 0, dpr = 1;
   let visible = true, raf = 0, lastFrame = 0, lastDraw = 0, elapsed = 0;
-  const pointer = { inside: false, anchorX: 0, anchorY: 0, x: 0, y: 0, tx: 0, ty: 0, energy: 0 };
+  const pointer = { inside:false, dragging:false, x:0, y:0, tx:0, ty:0, screenX:.5, screenY:.5, energy:0, spinX:0, spinY:0, pulse:0, lastX:0, lastY:0 };
   const projectPoint = (p, rotations, scale) => {
     let [x, y, z] = p;
     const cx = Math.cos(rotations.x), sx = Math.sin(rotations.x);
@@ -34,9 +34,15 @@
     const qx = x * cz - y * sz;
     y = x * sz + y * cz; x = qx;
     const perspective = 2.85 / (2.85 - z * .28);
-    return { x: width * .5 + x * scale * perspective,
-             y: height * .50 + y * scale * perspective,
-             z, perspective };
+    const projectedX = width * .5 + x * scale * perspective;
+    const projectedY = height * .5 + y * scale * perspective;
+    const dx = projectedX - pointer.screenX * width;
+    const dy = projectedY - pointer.screenY * height;
+    const distance = Math.hypot(dx, dy);
+    const reach = Math.max(0, 1 - distance / (scale * .74));
+    const push = pointer.energy * reach * reach * 16;
+    return { x: projectedX + dx / (distance || 1) * push,
+             y: projectedY + dy / (distance || 1) * push, z, perspective };
   };
   const orbitPoint = (setting, angle, elapsedTime) => {
     const r = setting.radius * (1 + .007 * Math.sin(elapsedTime * .63 + angle * 3 + setting.phase));
@@ -72,18 +78,18 @@
     const scrollRect = stage.getBoundingClientRect();
     const scrollFocus = reducedMotion.matches ? 0 :
       clamp((window.innerHeight * .5 - (scrollRect.top + scrollRect.height * .5)) / window.innerHeight, -1, 1);
-    const scale = Math.min(width * .35, height * .45);
+    const scale = Math.min(width * .35, height * .45) * (1 + pointer.pulse * .09);
     const rotations = {
-      x: -.19 + Math.sin(elapsed * .21) * (reducedMotion.matches ? 0 : .05) + pointer.y * .10 + scrollFocus * .055,
-      y:  .26 + elapsed * (reducedMotion.matches ? 0 : .12) + pointer.x * .13,
-      z: -.04 + Math.sin(elapsed * .13) * (reducedMotion.matches ? 0 : .035)
+      x: -.19 + Math.sin(elapsed * .21) * (reducedMotion.matches ? 0 : .05) + pointer.y * .73 + pointer.spinX + scrollFocus * .055,
+      y:  .26 + elapsed * (reducedMotion.matches ? 0 : .12) + pointer.x * 1.02 + pointer.spinY,
+      z: -.04 + Math.sin(elapsed * .13) * (reducedMotion.matches ? 0 : .035) + pointer.x * .15
     };
     const project = p => projectPoint(p, rotations, scale);
-    const cursorX = width * .5 + pointer.x * width * .33;
-    const cursorY = height * .5 + pointer.y * height * .34;
+    const cursorX = pointer.screenX * width;
+    const cursorY = pointer.screenY * height;
     const emphasis = (p) => {
       const distance = Math.hypot(p.x - cursorX, p.y - cursorY);
-      return pointer.energy * Math.pow(Math.max(0, 1 - distance / (scale * .95)), 1.65);
+      return pointer.energy * Math.pow(Math.max(0, 1 - distance / (scale * 1.3)), 1.35);
     };
 
     ctx.clearRect(0, 0, width, height);
@@ -116,12 +122,12 @@
     arcs.sort((a, b) => a.z - b.z);
     for (const arc of arcs) {
       const front = clamp((arc.z + 1.25) / 2.5, 0, 1);
-      const alpha = (dark ? .10 : .085) + front * (dark ? .35 : .31) + arc.emphasis * .26;
+      const alpha = (dark ? .19 : .16) + front * (dark ? .43 : .39) + arc.emphasis * .42 + pointer.pulse * .09;
       const rgb = dark ? '158,216,170' : '49,100,67';
       ctx.beginPath();
       ctx.moveTo(arc.a.x, arc.a.y);
       ctx.lineTo(arc.b.x, arc.b.y);
-      ctx.lineWidth = .53 + front * .67 + arc.emphasis * .30;
+      ctx.lineWidth = .72 + front * .79 + arc.emphasis * .46;
       ctx.strokeStyle = 'rgba(' + rgb + ',' + clamp(alpha, 0, .92) + ')';
       ctx.stroke();
     }
@@ -172,8 +178,8 @@
       ctx.lineTo(segment.b.x, segment.b.y);
       ctx.lineWidth = .65 + .47 * front;
       ctx.strokeStyle = dark
-        ? 'rgba(189,235,193,' + (.20 + front * .39 + local * .15) + ')'
-        : 'rgba(57,103,68,' + (.15 + front * .39 + local * .15) + ')';
+        ? 'rgba(189,235,193,' + (.27 + front * .43 + local * .30) + ')'
+        : 'rgba(57,103,68,' + (.22 + front * .43 + local * .30) + ')';
       ctx.stroke();
     }
 
@@ -183,7 +189,7 @@
       const signal = light.kind === 'signal';
       const core = light.kind === 'core';
       const radius = (signal ? 2.15 : core ? 1.16 : 1.06) + front * (signal ? .64 : .75) + light.emphasis * 1.2;
-      const alpha = (dark ? .29 : .26) + front * .49 + (signal ? .18 : 0) + light.emphasis * .15;
+      const alpha = (dark ? .38 : .34) + front * .48 + (signal ? .18 : 0) + light.emphasis * .20;
       if (signal || light.emphasis > .28) {
         ctx.beginPath();
         ctx.arc(light.x, light.y, radius * 3.6, 0, TAU);
@@ -209,36 +215,73 @@
     if (timestamp - lastDraw < 29) { schedule(); return; }
     const dt = lastFrame ? Math.min(.05, (timestamp - lastFrame) / 1000) : 0;
     lastFrame = timestamp; lastDraw = timestamp; elapsed += dt;
-    pointer.x = mix(pointer.x, pointer.tx, .063);
-    pointer.y = mix(pointer.y, pointer.ty, .063);
-    pointer.energy = mix(pointer.energy, pointer.inside ? 1 : 0, .08);
+    pointer.x = mix(pointer.x, pointer.tx, .20);
+    pointer.y = mix(pointer.y, pointer.ty, .20);
+    pointer.energy = mix(pointer.energy, pointer.inside ? 1 : 0, .20);
+    pointer.pulse *= .86;
     render();
     schedule();
   }
   function schedule() {
     if (!raf && !document.hidden && visible) raf = requestAnimationFrame(tick);
   }
-  function changePointer(e, entering) {
-    if (e.pointerType === 'touch') return;
+  function changePointer(e) {
     const rect = stage.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const x = (e.clientX - rect.left) / rect.width - .5;
-    const y = (e.clientY - rect.top) / rect.height - .5;
-    if (entering || !pointer.inside) {
-      pointer.anchorX = x; pointer.anchorY = y;
-      pointer.inside = true;
+    pointer.screenX = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+    pointer.screenY = clamp((e.clientY - rect.top) / rect.height, 0, 1);
+    pointer.tx = (pointer.screenX - .5) * 1.1;
+    pointer.ty = (pointer.screenY - .5) * 1.1;
+    pointer.inside = true;
+    if (pointer.dragging) {
+      pointer.spinY += clamp((e.clientX - pointer.lastX) / rect.width * 4.2, -.26, .26);
+      pointer.spinX += clamp((e.clientY - pointer.lastY) / rect.height * 3.5, -.22, .22);
+      pointer.lastX = e.clientX;
+      pointer.lastY = e.clientY;
     }
-    pointer.tx = clamp((x - pointer.anchorX) * 1.3, -.8, .8);
-    pointer.ty = clamp((y - pointer.anchorY) * 1.2, -.8, .8);
-    if (reducedMotion.matches) render();
+    if (reducedMotion.matches) {
+      pointer.x = pointer.tx; pointer.y = pointer.ty; pointer.energy = 1; render();
+    } else schedule();
   }
-  stage.addEventListener('pointerenter', e => changePointer(e, true), { passive: true });
-  stage.addEventListener('pointermove', e => changePointer(e, false), { passive: true });
-  stage.addEventListener('pointerleave', () => {
-    pointer.inside = false;
-    pointer.tx = 0; pointer.ty = 0;
-    if (reducedMotion.matches) render();
+  stage.addEventListener('pointerenter', e => {
+    if (e.pointerType === 'touch') return;
+    changePointer(e);
   }, { passive: true });
+  stage.addEventListener('pointermove', e => {
+    if (e.pointerType === 'touch' && !pointer.dragging) return;
+    changePointer(e);
+  }, { passive: true });
+  stage.addEventListener('pointerdown', e => {
+    if (e.button !== undefined && e.button !== 0) return;
+    pointer.dragging = true;
+    pointer.lastX = e.clientX; pointer.lastY = e.clientY;
+    pointer.pulse = 1; pointer.spinY += .13;
+    try { stage.setPointerCapture?.(e.pointerId); } catch (_) {}
+    changePointer(e);
+  });
+  const endDrag = e => {
+    pointer.dragging = false;
+    try { if (stage.hasPointerCapture?.(e.pointerId)) stage.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
+  stage.addEventListener('lostpointercapture', () => { pointer.dragging = false; });
+  stage.addEventListener('pointerleave', () => {
+    if (pointer.dragging) return;
+    pointer.inside = false; pointer.tx = 0; pointer.ty = 0;
+    if (reducedMotion.matches) { pointer.x = 0; pointer.y = 0; pointer.energy = 0; render(); }
+    else schedule();
+  }, { passive: true });
+  stage.addEventListener('keydown', e => {
+    if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter',' '].includes(e.key)) return;
+    e.preventDefault();
+    if (e.key === 'ArrowLeft') pointer.spinY -= .26;
+    if (e.key === 'ArrowRight') pointer.spinY += .26;
+    if (e.key === 'ArrowUp') pointer.spinX -= .24;
+    if (e.key === 'ArrowDown') pointer.spinX += .24;
+    if (e.key === 'Enter' || e.key === ' ') { pointer.spinY += .24; pointer.pulse = 1; }
+    if (reducedMotion.matches) render(); else schedule();
+  });
 
   const refresh = () => { resize(); if (reducedMotion.matches) render(); else schedule(); };
   if ('ResizeObserver' in window) new ResizeObserver(refresh).observe(stage);
