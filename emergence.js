@@ -25,12 +25,12 @@
     return x * x * (3 - 2 * x);
   };
   const TAU = Math.PI * 2;
-  const PERIOD = 7.4;
-  const HOLD = 3.2;
+  const PERIOD = 5.35;
+  const HOLD = .70;
   const FORMATIONS = 4;
 
   let width = 0, height = 0, dpr = 1, visible = true;
-  let raf = 0, last = 0, time = 2.82, particles = [];
+  let raf = 0, last = 0, time = .67, particles = [], pendingDt = 0, lastRender = 0;
   let cachedTheme = "";
   let palette = null;
 
@@ -40,7 +40,7 @@
   };
 
   function createParticles() {
-    const count = clamp(Math.round(width * 1.17), 560, 1550);
+    const count = clamp(Math.round(width * .95), 740, 1220);
     const points = [];
     let seed = 19573251;
     const random = () => {
@@ -57,12 +57,12 @@
       const t0 = target({u, v, z, s, lane}, 0, 0);
       points.push({
         u, v, z, s, lane,
-        x: t0.x + (random() - .5) * .055,
-        y: t0.y + (random() - .5) * .065,
-        vx: 0, vy: 0,
+        x: t0.x + (random() - .5) * .014,
+        y: t0.y + (random() - .5) * .018,
+        vx: 0, vy: 0, a: t0.a || 0,
         px: 0, py: 0,
-        direction: random() * .55 - .275,
-        length: 1.8 + random() * 3.7,
+        direction: random() * .15 - .075,
+        length: 4.0 + random() * 5.5,
         tint: random()
       });
     }
@@ -72,73 +72,58 @@
   // All targets occupy the same normalized horizontal stage.
   function target(p, formation, t) {
     const u = p.u, v = p.v, lane = p.lane;
-
-    // 0: An arcade. The particles self-organize into a row of arches, columns,
-    //    and openings, making structure unmistakable from a distance.
+    // The four shapes have different large-scale silhouettes.
     if (formation === 0) {
-      const nArch = 4;
-      const along = clamp((u + 1) * .5, .000001, .999999) * nArch;
-      const local = along - Math.floor(along);
-      const rounded = Math.sqrt(Math.max(0, 1 - Math.pow(local * 2 - 1, 2)));
+      // Four vaults, structural ribs, and vertical piers.
+      const along = Math.min(3.9999, (u + 1) * 2);
+      const bay = Math.floor(along);
+      const q = along - bay;
       const pillar = lane === 3;
       const x = pillar
-        ? (Math.round(along) / nArch * 2 - 1) * .91 + v * .019
-        : u * .91 + Math.sin(u * 12 + p.z * TAU) * .005;
+        ? -.90 + 1.8 * (bay + (q < .5 ? 0 : 1)) / 4 + v * .011
+        : u * .90 + v * .011;
       const y = pillar
-        ? .57 - p.s * 1.00
-        : .56 - 1.08 * rounded + v * .082;
-      return {x: x + .010 * Math.sin(t * .55 + p.u * 4.8), y: y + Math.sin(t * .58 + p.z * TAU) * .024};
+        ? .49 - p.seed * .90
+        : .47 - (lane === 2 ? .76 : .91) * Math.sin(Math.PI * q) + v * .030;
+      const a = pillar ? -Math.PI / 2 : -.81 * Math.cos(Math.PI * q);
+      return { x, y, a };
     }
-
-    // 1: A coordinated braid. Independent streams weave into an ordered whole.
     if (formation === 1) {
-      const stream = lane % 3;
-      const phase = u * Math.PI * 3.2 + stream * TAU / 3;
-      const envelope = .62 + .38 * Math.sin((u + 1) * Math.PI / 2);
+      // Three coordinated ribbons crossing over and under one another.
+      const phase = u * Math.PI * 2.65 + (lane % 3) * TAU / 3 - t * .34;
+      const amp = .34 + .12 * Math.cos(u * Math.PI / 2);
       return {
-        x: u * .93 + .017 * Math.cos(phase + t * .23),
-        y: Math.sin(phase - t * .26) * .45 * envelope
-          + v * .069 + (lane === 3 ? .04 : 0)
+        x: u * .90 + v * .016,
+        y: Math.sin(phase) * amp + v * .041,
+        a: Math.atan(.95 * Math.cos(phase))
       };
     }
-
-    // 2: A channel with thick outer boundaries and an adaptive inner flow.
-    //    Its large negative space is distinct from both the arches and braid.
     if (formation === 2) {
+      // Two longitudinal boundaries open a visible central channel.
       const wall = lane === 0 || lane === 1;
       const side = lane === 0 ? -1 : 1;
-      const corridor = .21 + .23 * Math.exp(-u * u * 3);
-      return {
-        x: u * .94 + .021 * Math.sin(t * .37 + v * 4),
-        y: wall
-          ? side * corridor + v * .11 + .025 * Math.sin(u * 5.2 + t * .25)
-          : .10 * Math.sin(u * 10.2 + t * .8 + lane * 1.4)
-              + v * .12
-      };
+      const rim = .25 + .19 * Math.cos(u * Math.PI / 2);
+      const y = wall
+        ? side * rim + v * .045
+        : .09 * Math.sin(u * 4.5 + lane * 1.5 - t * .28) + v * .05;
+      return { x: u * .91 + v * .012, y, a: wall ? 0 : .24 * Math.cos(u * 4.5) };
     }
-
-    // 3: Dispersal. The material loses its larger structure, enters a gently
-    //    turbulent flow field, and later forms architecture again.
+    // Dispersal: no singular coherent silhouette; broad, spacious field.
     return {
-      x: u * .94
-        + .14 * Math.sin(v * 3.9 + t * .51 + p.z * 1.8)
-        + .045 * Math.cos(u * 8 + t * .32),
-      y: v * .76
-        + .15 * Math.sin(u * 12.3 + p.z * 2.6 - t * .57)
-        + .05 * Math.cos(u * 6.2 + t * .73)
+      x: u * .91 + .045 * Math.sin(v * 4 + p.seed * 4 + t * .40),
+      y: v * .68 + .056 * Math.sin(u * 7 + p.seed * 5 - t * .45),
+      a: p.direction * 5
     };
   }
 
   function getFormation(t) {
-    const cycle = t / PERIOD;
-    const index = Math.floor(cycle) % FORMATIONS;
-    const local = ((t % PERIOD) + PERIOD) % PERIOD;
-    return {
-      index,
-      next: (index + 1) % FORMATIONS,
-      mix: smooth((local - HOLD) / (PERIOD - HOLD)),
-      turbulence: Math.sin(Math.PI * smooth((local - HOLD) / (PERIOD - HOLD)))
-    };
+    const phase = Math.floor(t / PERIOD);
+    const index = ((phase % FORMATIONS) + FORMATIONS) % FORMATIONS;
+    const local = t - phase * PERIOD;
+    const raw = clamp((local - HOLD) / (PERIOD - HOLD), 0, 1);
+    // An ease-out starts visibly and settles without a sudden jump.
+    const amount = 1 - Math.pow(1 - raw, 2.25);
+    return { index, next:(index + 1) % FORMATIONS, mix:amount };
   }
 
   function colors() {
@@ -179,10 +164,7 @@
     canvas.height = Math.round(h * dpr);
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (sizeChanged || !particles.length) particles = createParticles();
-    if (reduced.matches) {
-      placeReduced();
-      paint();
-    }
+    paint();
   }
 
   function fieldTarget(p, t, form) {
@@ -190,42 +172,31 @@
     const b = target(p, form.next, t);
     let x = mix(a.x, b.x, form.mix);
     let y = mix(a.y, b.y, form.mix);
+    const angleA = a.a || 0, angleB = b.a || 0;
+    const angle = angleA + Math.atan2(Math.sin(angleB - angleA), Math.cos(angleB - angleA)) * form.mix;
 
-    // When a structure dissolves, each fragment takes a slightly different
-    // path, producing a visible transformation rather than a crossfade.
-    const loosen = form.turbulence * .078;
-    x += loosen * Math.sin(p.z * TAU + t * .85);
-    y += loosen * Math.cos(p.s * TAU + t * .69);
-
-    // A cursor creates a local vortex and changes the collective geometry,
-    // but there are no clicks or direct manipulation of individual particles.
-    if (pointer.presence > .0005) {
-      const mx = pointer.x * .80;
-      const my = pointer.y * .55;
-      const dx = x - mx, dy = y - my;
-      const influence = Math.exp(-(dx * dx * 1.6 + dy * dy * 2.2) * 2.0);
-      x += pointer.presence * (-dy * .58 * influence + .082 * pointer.y * Math.sin(x * 4.7));
-      y += pointer.presence * (dx * .44 * influence + .105 * pointer.x * Math.sin(x * 5.1 + t * .28));
-    }
-    return {x, y};
+    // The cursor gently expands and shears the WHOLE architecture.
+    // No local vortices, wavy disruptions, or particle explosions.
+    x *= 1 + pointer.x * pointer.presence * .09;
+    y *= 1 + pointer.y * pointer.presence * .12;
+    x += y * pointer.y * pointer.presence * .05;
+    const breath = 1 + Math.sin(t * .56) * .012;
+    return { x:x * breath, y:y * breath, a:angle };
   }
 
   function update(dt) {
-    const form = getFormation(time);
-    const follow = 1 - Math.exp(-dt * 5.5);
+    const follow = 1 - Math.exp(-dt * 4.2);
     pointer.x = mix(pointer.x, pointer.targetX, follow);
     pointer.y = mix(pointer.y, pointer.targetY, follow);
     pointer.presence = mix(pointer.presence, pointer.targetPresence, follow);
 
-    // Stable damped motion. Both formation targets and pointer effects ease
-    // continuously, without restarting or hard-resetting the sculpture.
-    const pull = 47, drag = Math.exp(-9.4 * dt);
+    const form = getFormation(time);
+    const k = 1 - Math.exp(-dt * (reduced.matches ? 3.2 : 7.5));
     for (const p of particles) {
       const goal = fieldTarget(p, time, form);
-      p.vx = (p.vx + (goal.x - p.x) * pull * dt) * drag;
-      p.vy = (p.vy + (goal.y - p.y) * pull * dt) * drag;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
+      p.x = mix(p.x, goal.x, k);
+      p.y = mix(p.y, goal.y, k);
+      p.a += Math.atan2(Math.sin(goal.a - p.a), Math.cos(goal.a - p.a)) * k;
     }
   }
 
@@ -234,62 +205,46 @@
     const ctx = context, pal = colors();
     ctx.clearRect(0, 0, width, height);
 
-    // Spatial breathing without a heavy background panel or visible border.
-    const gradient = ctx.createRadialGradient(
-      width * .5, height * .5, height * .04,
-      width * .5, height * .5, width * .47
+    const glow = ctx.createRadialGradient(
+      width*.5, height*.5, height*.045,
+      width*.5, height*.5, width*.46
     );
-    gradient.addColorStop(0, pal.halo);
-    gradient.addColorStop(.54, pal.mist);
-    gradient.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = gradient;
+    glow.addColorStop(0, pal.halo);
+    glow.addColorStop(.57, pal.mist);
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
 
-    const xScale = width * .475, yScale = height * .42;
-    const cx = width * .5, cy = height * .5;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
+    // Batched drawing makes the sculpture much cheaper to animate.
+    // Length and orientation are shared coherently with each formation.
+    const bins = [[],[],[],[],[],[]];
+    const scaleX = width*.48, scaleY = height*.43;
     for (const p of particles) {
-      const x = cx + p.x * xScale, y = cy + p.y * yScale;
-      const prevX = p.px || x, prevY = p.py || y;
-      p.px = x; p.py = y;
-      if (x < -12 || x > width + 12 || y < -12 || y > height + 12) continue;
-
-      const velocityX = x - prevX, velocityY = y - prevY;
-      const speed = Math.hypot(velocityX, velocityY);
-      const direction = Math.atan2(velocityY, velocityX);
-      // Calm fragments align to the emergent architecture. Moving fragments
-      // incline with their own paths and leave short kinetic traces.
-      const angle = mix(
-        .21 + Math.sin(p.u * 5.7 + time * .20 + p.lane) * .46,
-        direction,
-        clamp(speed / 2.5, 0, .8)
-      ) + p.direction;
-      const length = p.length * (1 + clamp(speed / 12, 0, .85));
-      const ca = Math.cos(angle) * length * .5;
-      const sa = Math.sin(angle) * length * .5;
-      const centerFade = clamp((width * .5 - Math.abs(x - width * .5)) / (width * .10), 0, 1);
-      const topFade = clamp(Math.min(y, height - y) / 17, 0, 1);
-      const opacity = (.36 + p.z * .52) * centerFade * topFade;
-      const tone = p.tint < .075 ? pal.accent : p.lane === 3 ? pal.deep : pal.ink;
-
-      if (speed > .72) {
-        const tx = velocityX / speed * Math.min(speed * 1.6, 11);
-        const ty = velocityY / speed * Math.min(speed * 1.6, 11);
-        ctx.beginPath();
-        ctx.moveTo(x - tx, y - ty);
-        ctx.lineTo(x, y);
-        ctx.strokeStyle = rgba(tone, opacity * .12);
-        ctx.lineWidth = .75;
-        ctx.stroke();
-      }
-
+      const x = width*.5 + p.x*scaleX;
+      const y = height*.5 + p.y*scaleY;
+      if (x<-12 || x>width+12 || y<-12 || y>height+12) continue;
+      const fade = clamp(Math.min(x,width-x)/(width*.075),0,1) *
+        clamp(Math.min(y,height-y)/13,0,1);
+      if (fade < .05) continue;
+      const h = p.length * .5 * fade;
+      const angle = p.a + p.direction;
+      const dx = Math.cos(angle)*h, dy=Math.sin(angle)*h;
+      const tone = p.tint < .09 ? 2 : p.lane===3 ? 1 : 0;
+      const bin = bins[tone*2 + (p.seed>.73 ? 1 : 0)];
+      bin.push(x-dx,y-dy,x+dx,y+dy);
+    }
+    ctx.lineCap="round";
+    for(let b=0;b<bins.length;b++){
+      const segments=bins[b];
+      if (!segments.length) continue;
       ctx.beginPath();
-      ctx.moveTo(x - ca, y - sa);
-      ctx.lineTo(x + ca, y + sa);
-      ctx.strokeStyle = rgba(tone, opacity);
-      ctx.lineWidth = p.z > .74 ? 1.45 : p.z < .17 ? .76 : 1.06;
+      for(let i=0;i<segments.length;i+=4){
+        ctx.moveTo(segments[i],segments[i+1]);
+        ctx.lineTo(segments[i+2],segments[i+3]);
+      }
+      const rgb = b<2 ? pal.ink : b<4 ? pal.deep : pal.accent;
+      ctx.strokeStyle=rgba(rgb,b<4?.83:.74);
+      ctx.lineWidth=b%2?1.45:.90;
       ctx.stroke();
     }
   }
@@ -297,24 +252,35 @@
   function frame(ts) {
     raf = 0;
     if (document.hidden || !visible) return;
-    const dt = last ? clamp((ts - last) / 1000, 0, .044) : 1 / 60;
+    const dt = last ? clamp((ts - last) / 1000, 0, .05) : 1/60;
     last = ts;
-    time += dt;
-    update(dt);
+    pendingDt += dt;
+
+    // A reduced-motion setting slows and simplifies the evolution; it does
+    // not freeze the artwork indefinitely, as the previous version did.
+    if (reduced.matches && ts-lastRender < 75) {
+      schedule();
+      return;
+    }
+    lastRender = ts;
+    const elapsed = clamp(pendingDt,0,.12);
+    pendingDt=0;
+    time += elapsed * (reduced.matches ? .65 : 1);
+    update(elapsed);
     paint();
     schedule();
   }
   function schedule() {
-    if (!raf && !document.hidden && visible && !reduced.matches) {
+    if (!raf && !document.hidden && visible) {
       raf = requestAnimationFrame(frame);
     }
   }
   function placeReduced() {
-    const form = getFormation(0);
-    for (const p of particles) {
-      const goal = fieldTarget(p, 0, form);
-      p.x = goal.x; p.y = goal.y;
-      p.vx = 0; p.vy = 0; p.px = 0; p.py = 0;
+    // Retained only for startup fallback; we no longer freeze the stage.
+    const form = getFormation(time);
+    for(const p of particles) {
+      const g=fieldTarget(p,time,form);
+      p.x=g.x;p.y=g.y;p.a=g.a;
     }
   }
 
@@ -326,33 +292,21 @@
     pointer.targetY = clamp((e.clientY - r.top) / r.height * 2 - 1, -1, 1);
     pointer.targetPresence = 1;
     pointer.inside = true;
-    if (reduced.matches) {
-      pointer.x = pointer.targetX;
-      pointer.y = pointer.targetY;
-      pointer.presence = 1;
-      placeReduced();
-      paint();
-    } else schedule();
+    schedule();
   }
 
   stage.addEventListener("pointerenter", pointerMove, { passive: true });
   stage.addEventListener("pointermove", pointerMove, { passive: true });
   stage.addEventListener("pointerleave", () => {
     pointer.inside = false;
+    pointer.targetX=0;pointer.targetY=0;
     pointer.targetPresence = 0;
-    if (reduced.matches) {
-      pointer.presence = 0;
-      placeReduced();
-      paint();
-    }
   }, { passive: true });
 
   function refresh() {
     sizeCanvas();
-    if (reduced.matches) {
-      placeReduced();
-      paint();
-    } else schedule();
+    paint();
+    schedule();
   }
   if ("ResizeObserver" in window) {
     new ResizeObserver(refresh).observe(stage);
@@ -382,7 +336,7 @@
   });
   reduced.addEventListener?.("change", () => {
     if (raf) cancelAnimationFrame(raf);
-    raf = 0; last = 0;
+    raf = 0; last = 0; pendingDt=0;
     refresh();
   });
 
