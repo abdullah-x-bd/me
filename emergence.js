@@ -1,331 +1,296 @@
 (() => {
   'use strict';
-  /*
-   * Emergence: distributed representation in a continuous latent field.
-   * A neural-inspired nonlinear feature mixer evolves a high-dimensional
-   * state. Thousands of dots reveal an intersecting, folded projection.
-   * Pointer input changes distributed feature activations and therefore
-   * rearranges distant regions instead of pushing away nearby particles.
-   *
-   * This is a conceptual artwork, not a trained model or empirical result.
-   */
+  /* The Unseen Model. Original, interactive computational sculpture.
+     An online adaptive predictor learns cursor motion. Prediction errors
+     drive nonlocal structural reconfiguration of a raymarched metamaterial.
+     This is a conceptual artwork, not a trained neural network. */
   const canvas = document.getElementById('emergence-field');
-  if (!canvas) return;
-  const stage = canvas.closest('.emergence-stage');
-  const ctx = canvas.getContext('2d', {alpha:true});
-  if (!ctx || !stage) return;
-
+  const stage = canvas?.closest('.emergence-stage');
+  if (!canvas || !stage) return;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const TAU = Math.PI*2;
-  const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
-  const mix = (a,b,t) => a+(b-a)*t;
-  const smooth = (x) => {const p=clamp(x,0,1);return p*p*(3-2*p);};
-  const pulses=[];
-  let w=0,h=0,dpr=1,points=[],theme='',color=null;
-  let raf=0,last=0,t=0,visible=true,held=0,painted=0;
-  const input={inside:false,x:.5,y:.5,targetX:.5,targetY:.5,weight:0,targetWeight:0,lastX:.5,lastY:.5,lastPulse:-9};
-  const state=new Float32Array(8);
-  const stateTarget=new Float32Array(8);
-  const nonlinear=new Float32Array(14);
-  let coherence=0, previousCoherence=0;
-
-  function makePRNG(seed){return ()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
-  const rnd=makePRNG(20261115);
-  const W1=Array.from({length:14},(_,i)=>Array.from({length:8},(_,j)=>
-    Math.sin(i*2.781+j*1.317+i*j*.417)*.77+Math.cos(i*.671-j*1.479)*.40));
-  const W2=Array.from({length:8},(_,i)=>Array.from({length:14},(_,j)=>
-    Math.cos(i*1.73+j*1.813+i*j*.297)*.46));
-
-  function palette(){
-    const next=document.documentElement.dataset.theme==='dark'?'dark':'light';
-    if(next===theme&&color)return color;
-    theme=next;
-    color=theme==='dark'?{
-      main:['166,230,190','110,187,151','204,248,209'],
-      gold:'249,199,132',
-      halo:'rgba(109,196,145,.115)',
-      cloud:'rgba(114,190,143,.060)'
-    }:{
-      main:['21,87,52','48,127,82','28,103,63'],
-      gold:'169,108,58',
-      halo:'rgba(83,151,99,.070)',
-      cloud:'rgba(67,136,85,.044)'
-    };
-    return color;
-  }
-  const rgba=(rgb,a)=>'rgba('+rgb+','+clamp(a,0,1).toFixed(3)+')';
-
-  function makePoints(){
-    const n=Math.round(clamp(w*10.0,5100,12600));
-    const list=[];
-    for(let i=0;i<n;i++){
-      const u=(i*.61803398875+.13)%1*2-1;
-      const v=(i*.75487766625+.19)%1*2-1;
-      const z=(i*.569840291+.71)%1*2-1;
-      const sheet=i%4;
-      const q=rnd(),r=rnd(),s=rnd();
-      list.push({u,v,z,sheet,q,r,s,phase:rnd()*TAU,thickness:rnd(),shine:rnd(),sourceX:u*.96,sourceY:v*.90,px:0,py:0,size:0,alpha:0,accent:false});
+  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  const mix=(a,b,t)=>a+(b-a)*t;
+  const G=canvas.getContext('webgl',{alpha:true,antialias:false,premultipliedAlpha:false,preserveDrawingBuffer:false,powerPreference:'low-power'});
+  const vert=`attribute vec2 position;void main(){gl_Position=vec4(position,0.0,1.0);}`;
+  const frag=`precision highp float;
+  uniform vec2 res;
+  uniform float time;
+  uniform float dark;
+  uniform vec2 cursor;
+  uniform vec2 predicted;
+  uniform float attention;
+  uniform float surprise;
+  uniform float memory;
+  uniform float morph;
+  uniform float phase;
+  uniform float age;
+  #define PI 3.14159265
+  float sat(float x){return clamp(x,0.0,1.0);}
+  float hash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+  mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+  float gyroid(vec3 p){return dot(sin(p),cos(p.zxy));}
+  float mapS(vec3 p){
+    float x=p.x;
+    float env=1.0+0.09*sin(x*2.18+time*.55+phase)+.09*sin(x*4.4+phase*.72);
+    float center=.13*sin(x*1.45+time*.35+phase*.7);
+    float fieldPulse=surprise*(.8+.2*cos(x*5.8+phase*4.3));
+    p.y-=center+.085*fieldPulse*sin(x*4.5+phase*2.1);
+    p.z+=memory*.10*sin(x*4.1+p.y*6.2+time*.12);
+    vec3 tile=floor((p+vec3(2.0,.8,.8))*vec3(3.1,5.1,4.1));
+    vec3 displacement=vec3(hash(tile),hash(tile+vec3(7.1)),hash(tile+vec3(13.7)))-.5;
+    p+=surprise*displacement*.23;
+    p.yz=rot(.13*sin(x*1.75+phase+time*.28)+.35*fieldPulse)*p.yz;
+    // Enclosure is an irregular carved horizontal solid, not a wavy ribbon.
+    float taper=1.0-.92*smoothstep(1.14,2.08,abs(x));
+    float bound=length(vec2(p.y/(.45*env*taper),p.z/(.51*env*taper)))-1.0;
+    bound=max(bound*.38,(abs(x)-2.055)*.54);
+    // Multiple competing folded feature scales open and close its pores.
+    vec3 q=p*vec3(10.4,12.2,10.5);
+    q.xy+=vec2(.47*sin(x*3.4+phase),.33*cos(x*2.1+phase*1.3));
+    q.xz=rot(.25*sin(x*1.2+time*.4)+.31*surprise)*q.xz;
+    float g=gyroid(q);
+    float h=gyroid(q*1.63+vec3(2.1,0.6,-1.3)+phase*.3);
+    float blend=mix(g,.66*g+.43*h,morph);
+    float walls=(abs(blend)-(.43+.07*sin(x*2.7+phase)))*.052;
+    // Open central chamber, with folds bridging through and across it.
+    float bore=length(vec2(p.y-.08*sin(x*2.7+phase),p.z*.95))-(.20+.07*sin(x*3.1+phase));
+    float central=max(bound,max(walls,-bore));
+    // Secondary cross bracing adds depth and structural continuity.
+    float rib=length(vec2(sin(x*3.5+phase*.4)*.27-p.y,p.z-.26*cos(x*3.5+phase*.4)))-.040;
+    float shell=min(central,max(rib,bound));
+    // Prediction opens a small local cavity ahead of the visitor.
+    vec2 pred=(predicted-.5)*vec2(res.x/res.y,-1.);
+    vec3 focus=vec3(pred.x*1.05,pred.y*1.03,.20);
+    if(attention>.03){
+      float predictionCavity=length((p-focus)*vec3(.95,1.2,.8))-(.06+.25*attention);
+      shell=max(shell,-predictionCavity);
     }
-    return list;
-  }
-
-  function makeInput(t){
-    const p=input;
-    // Nonlinear mixed features vary continuously, with no hand-drawn
-    // destination shapes or fixed set of responses to pointer positions.
-    const values=[
-      Math.sin(t*.51),Math.cos(t*.35),Math.sin(t*.21+1.7),
-      p.weight*Math.sin(p.x*TAU*1.7),
-      p.weight*Math.cos(p.y*TAU*1.25),
-      p.weight*(2*p.x-1),
-      p.weight*(2*p.y-1),
-      Math.sin(t*.13+p.x*p.weight*5.2)
-    ];
-    for(let j=0;j<14;j++){
-      let sum=(j%3-1)*.23;
-      for(let k=0;k<8;k++)sum+=W1[j][k]*values[k];
-      nonlinear[j]=Math.tanh(sum*.65);
+    // Surprise fractures the solid into tiny crystalline, irregular cells,
+    // rather than forcing it into another horizontal ribbon shape.
+    if(surprise>.05){
+      vec3 fracCoord=fract((p+vec3(1.1,.7,.9))*vec3(3.1,5.1,4.1));
+      vec3 edge=min(fracCoord,1.-fracCoord);
+      float seam=min(edge.x,min(edge.y,edge.z));
+      shell=max(shell,(.045*surprise-.005-seam)*.23);
     }
-    for(let j=0;j<8;j++){
-      let sum=0;
-      for(let k=0;k<14;k++)sum+=W2[j][k]*nonlinear[k];
-      stateTarget[j]=Math.tanh(sum*.84);
+    return shell;
+  }
+  vec3 normal(vec3 p){float e=.004;return normalize(vec3(
+    mapS(p+vec3(e,0,0))-mapS(p-vec3(e,0,0)),
+    mapS(p+vec3(0,e,0))-mapS(p-vec3(0,e,0)),
+    mapS(p+vec3(0,0,e))-mapS(p-vec3(0,0,e))));}
+  void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*res)/res.y;
+    vec3 ro=vec3(uv.x*1.05,uv.y*1.03,3.4);
+    vec3 rd=vec3(0,0,-1);
+    float t=2.55;float hit=0.;vec3 p=ro;
+    for(int i=0;i<68;i++){
+      p=ro+rd*t;
+      float d=mapS(p);
+      if(d<.0035){hit=1.;break;}
+      t+=max(d*.66,.005);
+      if(t>4.65)break;
     }
-  }
-
-  function addPulse(x,y,power){
-    pulses.push({x,y,born:t,power});
-    if(pulses.length>7)pulses.shift();
-  }
-
-  function project(p,time,coh){
-    const u=p.u,v=p.v,L=p.sheet;
-    const s=state,m=p.phase;
-    const secondary=L>=2;
-    // Two interacting feature subspaces are folded into the same projected
-    // representation. Their intersection is not a scripted icon or motif.
-    const phase=u*(secondary?4.2:5.8)
-      +1.2*Math.sin(u*(secondary?3.6:2.8)+s[secondary?4:0]*2.3)
-      +(L%2)*.53+s[secondary?6:1]*2.4+time*(secondary?-.21:.14);
-    const body=secondary
-      ? (-.26*Math.sin(u*2.3+s[5]*2.5)
-          +.28*Math.sin(u*6.6+s[6]*2.0+.6)
-          +.09*Math.cos(u*10.8+s[0]*1.6))
-      : (.40*Math.sin(phase)+.13*Math.sin(u*3.1+s[5]*2.4))
-          *(.90+.10*Math.cos(u*2.5+s[2]));
-    const foldSize=(secondary?.075:.085)+.13*Math.abs(Math.cos(u*4.4+(L%2)*1.6+s[7]*1.3));
-    const fold=v*foldSize*(.75+.4*Math.cos(phase+v*.95));
-    const depth=.41*Math.cos(phase+v*2.8)+.18*Math.sin(u*3.3+v*2.9+s[2]*2);
-    const perspective=1/(1+.19*depth);
-    const manifoldX=(u*.87+
-      (secondary?-.11:.11)*Math.sin(v*4.1+phase)*Math.cos(u*3.2+s[6]*2)
-      +depth*(secondary?-.07:.07))*perspective;
-    const manifoldY=(body+fold+(L%2?-.035:.035)+depth*(secondary?-.10:.12)
-      +.048*Math.sin(u*13.0+v*2.5+s[4]*2.7))*perspective;
-    const wanderingX=p.sourceX+.12*Math.sin(time*.19+m*1.8+p.v*6);
-    const wanderingY=p.sourceY*.74+.075*Math.sin(time*.25+m+p.u*8);
-    const mixLevel=smooth((coh-.24)/.64);
-    const localScatter=(1-mixLevel)*.035;
-    return {
-      x:mix(wanderingX,manifoldX,mixLevel)+Math.sin(m+time*.37)*localScatter,
-      y:mix(wanderingY,manifoldY,mixLevel)+Math.cos(m*1.3+time*.31)*localScatter,
-      depth,
-      morph:mixLevel,
-      resonance: Math.pow(.5+.5*Math.sin(phase*2+v*5+s[3]*3),3)
-    };
-  }
-
-  function pulseStrength(u){
-    let power=0;
-    for(const p of pulses){
-      const age=t-p.born;
-      if(age<0||age>4.0)continue;
-      const radius=age*.38;
-      const separation=Math.abs(u*.5+.5-p.x);
-      const envelope=Math.exp(-Math.pow((separation-radius)*8.5,2))*Math.exp(-age*.42);
-      power=Math.max(power,p.power*envelope);
+    float edgeFade=1.0-smoothstep(1.96,2.57,abs(uv.x));
+    if(hit>0.5){
+      vec3 n=normal(p);
+      vec3 lightDir=normalize(vec3(-.54,.92,1.35));
+      float diffuse=.19+.81*max(dot(n,lightDir),0.);
+      float rim=pow(1.0-sat(n.z),2.6);
+      float spec=pow(max(dot(reflect(-lightDir,n),vec3(0,0,1)),0.),22.0);
+      float copper=.5+.5*sin(p.x*8.2+p.y*12.6+p.z*7.4+phase*2.3);
+      copper=smoothstep(.83,.97,copper)*(.24+.65*surprise+.18*morph);
+      vec3 jade=dark>.5?vec3(.16,.45,.29):vec3(.045,.23,.14);
+      vec3 highlight=dark>.5?vec3(.66,.92,.71):vec3(.53,.73,.57);
+      vec3 bronze=dark>.5?vec3(.99,.68,.38):vec3(.69,.43,.25);
+      float etching=.78+.22*sin(p.x*65.+p.y*36.+p.z*21.+phase*4.);
+      vec3 albedo=mix(jade,highlight,.37+.42*max(n.z,0.));
+      albedo=mix(albedo,bronze,copper);
+      float ao=.60+.40*max(0.,mapS(p+n*.075)/.075);
+      vec3 col=albedo*(diffuse*.94+.19)*ao*etching;
+      col+=spec*(dark>.5?.56:.32)*highlight;
+      col+=rim*(dark>.5?.28:.18)*highlight;
+      // A predicted position appears as an internal illumination, not a cursor ring.
+      vec2 target=vec2((predicted.x-.5)*res.x/res.y,-(predicted.y-.5));
+      float predictedLight=attention*exp(-pow((uv.x-target.x)*3.8,2.)-pow((uv.y-target.y)*4.2,2.));
+      col+=bronze*predictedLight*.49*(.6+.4*abs(n.z));
+      float shimmer=.25+.75*abs(sin(time*.54+p.x*8.+phase));
+      col+=highlight*surprise*.16*shimmer;
+      float alpha=sat(edgeFade*(.92+.08*diffuse));
+      gl_FragColor=vec4(col,alpha);
+    }else{
+      // Negative space stays transparent, allowing the editorial page to breathe.
+      float shadow=exp(-pow(uv.y*2.6,2.))*exp(-pow(uv.x*.54,4.));
+      float glimmer=exp(-pow(uv.y*5.,2.))*exp(-pow(uv.x*.56,2.));
+      vec3 tint=dark>.5?vec3(.27,.48,.34):vec3(.33,.48,.36);
+      float a=edgeFade*(shadow*.026+glimmer*.022);
+      gl_FragColor=vec4(tint,a);
     }
-    return power;
+  }`;
+
+  let glReady=false,program=null,uni={},buf=null;
+  if(G){
+    try{
+      const shader=(type,text)=>{const s=G.createShader(type);G.shaderSource(s,text);G.compileShader(s);if(!G.getShaderParameter(s,G.COMPILE_STATUS))throw Error(G.getShaderInfoLog(s));return s;};
+      program=G.createProgram();G.attachShader(program,shader(G.VERTEX_SHADER,vert));G.attachShader(program,shader(G.FRAGMENT_SHADER,frag));G.linkProgram(program);
+      if(!G.getProgramParameter(program,G.LINK_STATUS))throw Error(G.getProgramInfoLog(program));
+      G.useProgram(program);
+      buf=G.createBuffer();G.bindBuffer(G.ARRAY_BUFFER,buf);G.bufferData(G.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),G.STATIC_DRAW);
+      const pos=G.getAttribLocation(program,'position');G.enableVertexAttribArray(pos);G.vertexAttribPointer(pos,2,G.FLOAT,false,0,0);
+      for(const k of ['res','time','dark','cursor','predicted','attention','surprise','memory','morph','phase','age'])uni[k]=G.getUniformLocation(program,k);
+      G.disable(G.DEPTH_TEST);G.enable(G.BLEND);G.blendFunc(G.SRC_ALPHA,G.ONE_MINUS_SRC_ALPHA);
+      const debug=G.getExtension('WEBGL_debug_renderer_info');
+      const rendererName=String(G.getParameter(debug?debug.UNMASKED_RENDERER_WEBGL:G.RENDERER)||'');
+      if(/swiftshader|llvmpipe|software rasterizer/i.test(rendererName))throw Error('Software WebGL renderer: use low-cost fallback');
+      glReady=true;
+    }catch(e){console.error('Unseen Model WebGL shader:',e);}
   }
 
-  function update(dt){
-    const p=input,follow=1-Math.exp(-dt*5.2);
-    p.x=mix(p.x,p.targetX,follow);p.y=mix(p.y,p.targetY,follow);
-    p.weight=mix(p.weight,p.targetWeight,1-Math.exp(-dt*3.8));
-    makeInput(t);
-    const k=1-Math.exp(-dt*2.3);
-    for(let j=0;j<8;j++)state[j]=mix(state[j],stateTarget[j],k);
-
-    // Smooth, critical-threshold coherence transition: diffuse activity
-    // becomes a legible folded representation, then reorganizes again.
-    const drive=.5+.5*Math.sin(t*.53-.32)+.045*Math.sin(t*.23+1.7);
-    const critical=1/(1+Math.exp(-(drive-.59)*14.0));
-    const target=.15+.84*critical;
-    coherence=mix(coherence,target,1-Math.exp(-dt*4.5));
-    if(previousCoherence<.70 && coherence>=.70){
-      const source=clamp(.5+state[2]*.24,.08,.92);
-      addPulse(source,.5,1.25);
+  // Small genuinely adaptive online predictor. The weights adjust from
+  // observed future cursor displacements; sudden reversals cause large errors.
+  const learner={
+    wx:[.73,0,.08,0],wy:[0,.73,0,.08],samples:[],last:null,
+    velocity:[0,0],accel:[0,0],prediction:[.5,.5],
+    surprise:0,shock:0,memory:0,mode:0,phase:0,observations:0,
+    active:false,lastPointerTime:0
+  };
+  const HORIZON=.19;
+  const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
+  function features(v,a){return [clamp(v[0]*HORIZON,-.45,.45),clamp(v[1]*HORIZON,-.45,.45),clamp(a[0]*HORIZON*HORIZON,-.42,.42),clamp(a[1]*HORIZON*HORIZON,-.42,.42)];}
+  function processPointer(x,y,now){
+    const L=learner;L.active=true;L.lastPointerTime=now;
+    if(L.last){
+      const dt=clamp((now-L.last.t),.012,.12);
+      const nv=[clamp((x-L.last.x)/dt,-6,6),clamp((y-L.last.y)/dt,-6,6)];
+      L.accel=[clamp((nv[0]-L.velocity[0])/dt,-80,80),clamp((nv[1]-L.velocity[1])/dt,-80,80)];
+      L.velocity=[mix(L.velocity[0],nv[0],.46),mix(L.velocity[1],nv[1],.46)];
     }
-    previousCoherence=coherence;
-
-    const c=clamp(coherence+p.weight*.11,0,1);
-    for(const dot of points){
-      const v=project(dot,t,c);
-      const pulse=pulseStrength(dot.u);
-      dot.px=w*(.5+v.x*.485);
-      dot.py=h*(.5+v.y*.485);
-      const depthIllum=.62+.36*(v.depth+1)*.5;
-      const focus=Math.pow(.5+.5*Math.sin(dot.v*11.0+dot.u*12.0+state[1]*2+dot.sheet*.8),2);
-      dot.alpha=clamp((.21+.55*v.morph)*depthIllum*(.70+.60*focus)+pulse*.38,0,1);
-      dot.size=clamp(.60+dot.thickness*.96+Math.max(0,v.depth)*.52+pulse*1.2, .38, 3.2);
-      dot.accent=(pulse>.24 && dot.shine>.42) || (dot.shine>.955 && v.morph>.55);
-      dot.layer=clamp(Math.floor((v.depth+1)*1.6),0,3);
-    }
-  }
-
-  function draw(){
-    if(!w||!h)return;
-    const pal=palette();
-    ctx.clearRect(0,0,w,h);
-    const grad=ctx.createRadialGradient(w*.5,h*.51,h*.04,w*.5,h*.51,w*.44);
-    grad.addColorStop(0,pal.halo);
-    grad.addColorStop(.53,pal.cloud);
-    grad.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=grad;
-    ctx.fillRect(0,0,w,h);
-
-    // Sparse shared feature illuminations make the distributed activity
-    // visible without adding a conventional neural graph or connecting lines.
-    if(coherence>.52){
-      const intensity=smooth((coherence-.52)/.44);
-      for(let j=0;j<3;j++){
-        const u=clamp((j-1)*.48+state[j+2]*.13,-.84,.84);
-        const fy=.5+.16*Math.sin(u*6.5+state[j]*2.0+j*1.4);
-        const fx=w*(.5+u*.45);
-        const py=h*fy;
-        const radius=h*(.34+.05*j);
-        const aura=ctx.createRadialGradient(fx,py,0,fx,py,radius);
-        aura.addColorStop(0,rgba(pal.main[j%3],intensity*(theme==='dark'?.078:.043)));
-        aura.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.fillStyle=aura;
-        ctx.fillRect(fx-radius,py-radius,radius*2,radius*2);
+    // Compare each matured prediction to the newly observed position.
+    for(let i=L.samples.length-1;i>=0;i--){
+      const s=L.samples[i];if(now-s.time<HORIZON*.8)continue;
+      const target=[x-s.origin[0],y-s.origin[1]];
+      const ex=clamp(target[0]-dot(L.wx,s.f),-.65,.65);
+      const ey=clamp(target[1]-dot(L.wy,s.f),-.65,.65);
+      const norm=.08+dot(s.f,s.f);
+      const rate=.10/norm;
+      for(let j=0;j<4;j++){L.wx[j]=clamp(L.wx[j]+rate*ex*s.f[j],-2,2);L.wy[j]=clamp(L.wy[j]+rate*ey*s.f[j],-2,2);}
+      const error=Math.hypot(x-s.expected[0],y-s.expected[1]);
+      const newSurprise=clamp((error-.020)*5.2,0,1);
+      if(newSurprise>L.surprise)L.surprise=newSurprise;
+      if(newSurprise>.17){
+        L.shock=Math.max(L.shock,clamp(newSurprise*2.4,0,1));
+        L.phase+=.32*newSurprise;
+        L.memory=Math.min(1,L.memory+newSurprise*.3);
       }
+      L.samples.splice(i,1);
+      L.observations++;
     }
-
-    // Batched point-only rendering with depth and illumination distinctions.
-    const buckets=Array.from({length:12},()=>[]);
-    for(const p of points){
-      if(p.px<0||p.px>w||p.py<0||p.py>h)continue;
-      const border=clamp(Math.min(p.px,w-p.px)/(w*.05),0,1)
-        *clamp(Math.min(p.py,h-p.py)/9,0,1);
-      if(border<.04||p.alpha<.13)continue;
-      const sz=p.size*border;
-      const sizeGroup=sz<.95?0:sz<1.55?1:2;
-      const group=p.accent?2:p.layer>1?1:0;
-      buckets[sizeGroup*4+group].push(p.px,p.py);
+    const f=features(L.velocity,L.accel);
+    const future=[clamp(x+dot(L.wx,f),0,1),clamp(y+dot(L.wy,f),0,1)];
+    L.prediction=future;
+    if(!L.samples.length||now-L.samples[L.samples.length-1].time>.052){
+      L.samples.push({time:now,origin:[x,y],f,expected:future});
+      if(L.samples.length>8)L.samples.shift();
     }
-    const alpha=[.29,.43,.59];
-    const radii=[.65,1.15,1.78];
-    for(let n=0;n<12;n++){
-      const data=buckets[n];if(!data.length)continue;
-      const shade=n%4;
-      const size=Math.floor(n/4);
-      ctx.beginPath();
-      const r=radii[size];
-      for(let i=0;i<data.length;i+=2){
-        ctx.moveTo(data[i]+r,data[i+1]);
-        ctx.arc(data[i],data[i+1],r,0,TAU);
-      }
-      const v=shade===2?pal.gold:pal.main[shade===1?2:0];
-      ctx.fillStyle=rgba(v,shade===2?.73:alpha[size]+coherence*.20);
-      ctx.fill();
-    }
+    L.last={x,y,t:now};
   }
-
-  function fit(){
-    const rect=stage.getBoundingClientRect();
-    const ww=Math.round(rect.width),hh=Math.round(rect.height);
-    if(!ww||!hh)return;
-    const ratio=Math.min(window.devicePixelRatio||1,1.5);
-    if(w===ww&&h===hh&&dpr===ratio)return;
-    w=ww;h=hh;dpr=ratio;
-    canvas.width=Math.round(w*dpr);
-    canvas.height=Math.round(h*dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    points=makePoints();
-    for(let j=0;j<8;j++)state[j]=0;
-    update(1/60);
-    draw();
-  }
-
-  function move(e){
+  const pointer={x:.5,y:.5,inside:false};
+  function onPointer(e){
     if(e.pointerType==='touch')return;
-    const rect=stage.getBoundingClientRect();
-    const x=clamp((e.clientX-rect.left)/rect.width,0,1);
-    const y=clamp((e.clientY-rect.top)/rect.height,0,1);
-    const first=!input.inside;
-    const travel=Math.hypot((x-input.lastX)*w,(y-input.lastY)*h);
-    input.inside=true;
-    input.targetX=x;
-    input.targetY=y;
-    input.targetWeight=1;
-    if(first){
-      input.x=x;
-      input.y=y;
-      addPulse(x,y,1.0);
-      input.lastPulse=t;
-      input.lastX=x;
-      input.lastY=y;
-    }else if(travel>65&&t-input.lastPulse>.15){
-      addPulse(x,y,.85);
-      input.lastPulse=t;
-      input.lastX=x;
-      input.lastY=y;
-    }
+    const r=stage.getBoundingClientRect();if(!r.width||!r.height)return;
+    const x=clamp((e.clientX-r.left)/r.width,0,1),y=clamp((e.clientY-r.top)/r.height,0,1);
+    if(!pointer.inside){learner.shock=Math.max(learner.shock,.27);learner.memory=Math.max(learner.memory,.13);}
+    pointer.x=x;pointer.y=y;pointer.inside=true;
+    processPointer(x,y,performance.now()/1000);
     schedule();
   }
-  stage.addEventListener('pointerenter',move,{passive:true});
-  stage.addEventListener('pointermove',move,{passive:true});
-  stage.addEventListener('pointerleave',()=>{
-    input.inside=false;
-    input.targetWeight=0;
-  },{passive:true});
+  stage.addEventListener('pointerenter',onPointer,{passive:true});
+  stage.addEventListener('pointermove',onPointer,{passive:true});
+  stage.addEventListener('pointerleave',()=>{pointer.inside=false;learner.active=false;learner.last=null;learner.samples.length=0;},{passive:true});
 
+  // Fallback keeps the page meaningful where WebGL is disabled.
+  let fallback=null, fallbackCanvas=canvas, fDots=[];
+  if(!glReady){
+    if(G){
+      fallbackCanvas=document.createElement('canvas');
+      fallbackCanvas.setAttribute('aria-hidden','true');
+      stage.appendChild(fallbackCanvas);
+      canvas.style.display='none';
+    }
+    fallback=fallbackCanvas.getContext('2d');
+    const random=(n)=>{let x=Math.sin(n*72.17)*43758.5453;return x-Math.floor(x);};
+    for(let i=0;i<950;i++)fDots.push([random(i+3),random(i+12),random(i+92)]);
+  }
+  let width=0,height=0,dpr=1,raf=0,last=0,time=0,visible=true,lastPaint=0;
+  function fit(){
+    const r=stage.getBoundingClientRect(),w=Math.round(r.width),h=Math.round(r.height);
+    if(!w||!h)return;
+    const scale=Math.min(window.devicePixelRatio||1,glReady?(w<700?.85:.80):1.5);
+    if(w===width&&h===height&&scale===dpr)return;
+    width=w;height=h;dpr=scale;
+    const activeCanvas=glReady?canvas:fallbackCanvas;
+    activeCanvas.width=Math.round(w*scale);activeCanvas.height=Math.round(h*scale);
+    if(glReady)G.viewport(0,0,canvas.width,canvas.height);
+    else fallback.setTransform(scale,0,0,scale,0,0);
+  }
+  function fallbackDraw(){
+    const c=fallback;c.clearRect(0,0,width,height);
+    const col=document.documentElement.dataset.theme==='dark'?'161,221,174':'37,100,61';
+    for(const p of fDots){
+      const a=p[0]*6.28+time*.24+learner.phase;
+      const x=width*(.5+Math.sin(a*2.1+p[1]*9)*.36);
+      const y=height*(.5+.34*Math.sin(a*1.3+p[2]*6));
+      const r=.5+p[2]*1.8+learner.shock*1.7;
+      c.fillStyle='rgba('+col+','+(.24+p[1]*.5)+')';c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();
+    }
+  }
+  function render(){
+    if(!width||!height)return;
+    if(!glReady){if(fallback)fallbackDraw();return;}
+    const theme=document.documentElement.dataset.theme==='dark'?1:0;
+    G.useProgram(program);
+    G.uniform2f(uni.res,canvas.width,canvas.height);
+    G.uniform1f(uni.time,time);
+    G.uniform1f(uni.dark,theme);
+    G.uniform2f(uni.cursor,pointer.x,pointer.y);
+    G.uniform2f(uni.predicted,learner.prediction[0],learner.prediction[1]);
+    G.uniform1f(uni.attention,learner.active?1:0);
+    G.uniform1f(uni.surprise,learner.shock);
+    G.uniform1f(uni.memory,learner.memory);
+    G.uniform1f(uni.morph,learner.mode);
+    G.uniform1f(uni.phase,learner.phase);
+    G.uniform1f(uni.age,time);
+    G.clearColor(0,0,0,0);G.clear(G.COLOR_BUFFER_BIT);
+    G.drawArrays(G.TRIANGLES,0,6);
+  }
   function tick(now){
-    raf=0;
-    if(!visible||document.hidden)return;
-    const dt=last?clamp((now-last)/1000,0,.055):1/60;
-    last=now;
-    held+=dt;
-    if(reduced.matches&&now-painted<60){schedule();return;}
-    painted=now;
-    const d=clamp(held,0,.11);
-    held=0;
-    t+=d*(reduced.matches?.67:1);
-    update(d);
-    draw();
+    raf=0;if(!visible||document.hidden)return;
+    const dt=last?clamp((now-last)/1000,0,.05):1/60;last=now;
+    time+=dt*(reduced.matches?.55:1);
+    const L=learner;
+    L.surprise=Math.max(0,L.surprise-dt*.25);
+    L.shock=Math.max(0,L.shock-dt*.21);
+    L.memory=Math.max(0,L.memory-dt*.055);
+    const targetMode=.5+.5*Math.sin(time*.30+L.phase*1.6)+L.shock*.48;
+    L.mode=mix(L.mode,clamp(targetMode,0,1),1-Math.exp(-dt*.9));
+    // Autonomous reconstruction is visible even if no visitor interacts.
+    L.phase+=dt*(reduced.matches?.025:.058)+dt*L.shock*.25;
+    if(now-lastPaint>(reduced.matches?80:30)){render();lastPaint=now;}
     schedule();
   }
-  function schedule(){
-    if(!raf&&visible&&!document.hidden)raf=requestAnimationFrame(tick);
-  }
-  function refresh(){fit();schedule();}
+  function schedule(){if(!raf&&visible&&!document.hidden)raf=requestAnimationFrame(tick);}
+  function refresh(){fit();render();schedule();}
   if('ResizeObserver' in window)new ResizeObserver(refresh).observe(stage);
   else window.addEventListener('resize',refresh,{passive:true});
   if('IntersectionObserver' in window){
-    new IntersectionObserver(entries=>{
-      visible=entries[0].isIntersecting;
-      if(!visible&&raf){cancelAnimationFrame(raf);raf=0;last=0;held=0;}
-      if(visible)refresh();
-    },{rootMargin:'110px'}).observe(stage);
+    new IntersectionObserver(e=>{visible=e[0].isIntersecting;if(!visible&&raf){cancelAnimationFrame(raf);raf=0;last=0;}if(visible)refresh();},{rootMargin:'120px'}).observe(stage);
   }
-  document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){
-      if(raf)cancelAnimationFrame(raf);
-      raf=0;last=0;held=0;
-    }else refresh();
-  });
-  window.addEventListener('site-theme-change',()=>{theme='';refresh();});
-  reduced.addEventListener?.('change',()=>{painted=0;refresh();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;last=0;}else refresh();});
+  window.addEventListener('site-theme-change',refresh);
+  reduced.addEventListener?.('change',refresh);
+  // Minimal introspection hook for automated visual QA; no UI controls.
+  if(new URLSearchParams(location.search).has('unseenTest')){
+    window.__unseenModelTest={learner,render,fit,onPointer,getGL:()=>G,getReady:()=>glReady};
+  }
   refresh();
 })();
