@@ -1,249 +1,334 @@
 (() => {
   "use strict";
-  const canvas=document.getElementById("system-landscape");
-  if(!canvas)return;
-  const stage=canvas.closest(".system-landscape-stage");
-  const modeButtons=[...document.querySelectorAll("[data-landscape-mode]")];
-  const status=document.getElementById("system-landscape-status");
-  const ctx=canvas.getContext("2d",{alpha:true});
-  if(!ctx||!stage)return;
 
-  // A conceptual demonstration, not empirical model output.
-  // Each raised tile stands for part of a larger interdependent system.
-  // Amber pulses depict propagation; the mint boundary depicts containment.
-  const NX=28,NY=11,GATE=14;
-  const motion=window.matchMedia("(prefers-reduced-motion: reduce)");
-  const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
-  const mix=(a,b,f)=>a+(b-a)*f;
-  const seed=(i,j)=>Math.sin(i*32.5287+j*78.233)*43758.5453%1;
-  let w=0,h=0,dpr=1,mode="uncontained",visible=true;
-  let frame=0,last=0,lastDraw=0,t=0,nextAuto=6.8;
-  let recentAction=0,dragging=false,lastDrag=-1;
-  let hover={i:-1,j:-1,alpha:0};
-  const shocks=[{i:5,j:5,when:-.75}];
-  const centers=[];
-  let layout={step:0,halfX:0,halfY:0,rowStep:0,x0:0,y0:0,shear:0};
+  // A conceptual demonstration of propagation and containment.
+  // Contours are possible paths of influence, not measured data.
+  const canvas = document.getElementById("system-landscape");
+  const stage = canvas?.closest(".system-landscape-stage");
+  const ctx = canvas?.getContext("2d", { alpha: true });
+  if (!canvas || !stage || !ctx) return;
 
-  function resize(){
-    const r=stage.getBoundingClientRect();
-    const cw=Math.round(r.width),ch=Math.round(r.height);
-    if(cw<1||ch<1)return;
-    const dd=Math.min(window.devicePixelRatio||1,1.55);
-    if(cw!==w||ch!==h||dpr!==dd){
-      w=cw;h=ch;dpr=dd;
-      canvas.width=Math.round(w*dpr);
-      canvas.height=Math.round(h*dpr);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-    }
-    const step=Math.min(w*.88/(NX+1.2),36);
-    const shear=step*.28;
-    const rowStep=Math.min(11.2,h*.44/NY);
-    layout={step,halfX:step*.37,halfY:Math.max(2.2,step*.112),
-      rowStep,shear,x0:(w-(NX-1)*step)/2,
-      y0:h*.44-(NY-1)*rowStep*.48};
-    centers.length=0;
-    for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){
-      centers.push({i,j,x:layout.x0+i*step+(j-(NY-1)*.5)*shear,
-        y:layout.y0+j*rowStep+i*.31});
-    }
+  const controls = [...document.querySelectorAll("[data-landscape-mode]")];
+  const status = document.getElementById("system-landscape-status");
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const mix = (a, b, t) => a + (b - a) * t;
+  const smooth = (a, b, v) => {
+    const t = clamp((v - a) / (b - a), 0, 1);
+    return t * t * (3 - 2 * t);
+  };
+  const TAU = Math.PI * 2;
+  const ROWS = 32, STEPS = 88, MAX_SHOCKS = 4;
+  const shocks = [];
+  const pointer = {
+    active: false, drawing: false, id: null,
+    x: .35, y: .5, targetX: .35, targetY: .5,
+    strength: 0, lastEmit: -10
+  };
+
+  let width = 0, height = 0, dpr = 1;
+  let mode = "uncontained", safeguard = 0, safeguardTarget = 0;
+  let t = 0, prevFrame = 0, frame = 0, visible = true;
+  let nextAuto = 6.9, latestAction = -10;
+  let lastTheme = null;
+  const cache = { xs: [], rows: [] };
+
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    const w = Math.round(r.width), h = Math.round(r.height);
+    if (w < 1 || h < 1) return;
+    const d = Math.min(window.devicePixelRatio || 1, 1.5);
+    if (w === width && h === height && d === dpr) return;
+    width = w; height = h; dpr = d;
+    canvas.width = Math.round(w * d);
+    canvas.height = Math.round(h * d);
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+    cache.xs = Array.from({ length: STEPS + 1 }, (_, i) => width * (.04 + .92 * i / STEPS));
+    cache.rows = Array.from({ length: ROWS }, (_, j) => height * (.18 + .64 * j / (ROWS - 1)));
     draw();
   }
 
-  function shock(i,j){
-    shocks.push({i:clamp(i,0,NX-1),j:clamp(j,0,NY-1),when:t});
-    while(shocks.length>5)shocks.shift();
-    recentAction=t;
-    nextAuto=t+9;
-    if(status)status.textContent=mode==="safeguarded"?
-      "Disturbance introduced. The safeguard boundary restricts its spread.":
-      "Disturbance introduced. Watch the wave cross the system.";
-    if(motion.matches)draw();
+  function emit(x, y, automatic = false) {
+    const p = {
+      x: clamp(x, .04, .96),
+      y: clamp(y, .10, .90),
+      born: t,
+      strength: automatic ? .82 : 1
+    };
+    shocks.push(p);
+    if (shocks.length > MAX_SHOCKS) shocks.shift();
+    latestAction = t;
+    nextAuto = t + 8.2;
+    if (!automatic && status) {
+      status.textContent = mode === "safeguarded"
+        ? "A disturbance entered the system. Oversight absorbs most of the wave beyond the boundary."
+        : "A disturbance entered the system. The wave propagates across the whole field.";
+    }
+    if (motion.matches) draw();
     else start();
   }
 
-  function attenuation(s,i,j){
-    const crossing=(s.i<GATE)!==(i<GATE);
-    return mode==="safeguarded"&&crossing?.015:1;
-  }
-
-  function activation(i,j){
-    let value=0;
-    for(const s of shocks){
-      const age=motion.matches?.9:t-s.when;
-      if(age<0||age>6.5)continue;
-      const distance=Math.hypot((i-s.i)*.93,(j-s.j)*1.25);
-      const radius=age*6.0;
-      const band=Math.exp(-Math.pow((distance-radius)/2.05,2));
-      const wake=Math.exp(-distance*.15-age*.88)*.16;
-      value=Math.max(value,(band*.97+wake)*Math.exp(-age*.085)*attenuation(s,i,j));
+  function measure(x, y) {
+    let displace = 0, highlight = 0;
+    const gate = width * .57;
+    const gateOpacity = 1 - safeguard * .94 * smooth(gate - 19, gate + 21, x);
+    for (const shock of shocks) {
+      const age = motion.matches ? 1.0 : t - shock.born;
+      if (age < 0 || age > 5.9) continue;
+      const sx = width * shock.x, sy = height * shock.y;
+      const distance = Math.hypot(x - sx, (y - sy) * 1.32);
+      const radius = age * (width * .17 + 58);
+      const band = 19 + age * 5.2;
+      const wave = Math.exp(-Math.pow((distance - radius) / band, 2) * 1.12)
+        * Math.exp(-age * .19) * shock.strength;
+      const sourceSide = sx <= gate;
+      const response = sourceSide ? gateOpacity : 1 - safeguard * .94 *
+        (1 - smooth(gate - 19, gate + 21, x));
+      displace += wave * response * 32;
+      highlight = Math.max(highlight, wave * response);
     }
-    return clamp(value,0,1);
+    const dx = (x - width * pointer.x) / (width * .105 + 24);
+    const dy = (y - height * pointer.y) / (height * .17 + 7);
+    const touch = pointer.strength * Math.exp(-(dx * dx + dy * dy) * 1.4);
+    return { shift: displace + touch * 18, risk: highlight, touch };
   }
 
-  function polygon(points,color,stroke){
-    ctx.beginPath();
-    ctx.moveTo(points[0][0],points[0][1]);
-    for(let n=1;n<points.length;n++)ctx.lineTo(points[n][0],points[n][1]);
-    ctx.closePath();
-    ctx.fillStyle=color;
-    ctx.fill();
-    if(stroke){ctx.lineWidth=.55;ctx.strokeStyle=stroke;ctx.stroke();}
+  function surfaceY(x, rowY, j, measureValue) {
+    const xf = x / Math.max(1, width);
+    const ambient = Math.sin(xf * TAU * 1.03 + j * .23 - t * .38) * 3.3
+      + Math.sin(xf * TAU * 2.43 - j * .17 + t * .23) * 1.3
+      + Math.sin(j * .55 + xf * TAU * .52 + t * .38) * 1.2;
+    return rowY + ambient - measureValue.shift;
   }
 
-  const rgba=(rgb,a)=>"rgba("+rgb+","+clamp(a,0,1)+")";
-  function draw(){
-    if(!w||!h)return;
-    const dark=document.documentElement.dataset.theme==="dark";
-    ctx.clearRect(0,0,w,h);
-    const inactive=dark?"128,174,145":"80,117,91";
-    const left=dark?"61,107,81":"79,123,91";
-    const right=dark?"43,84,65":"60,103,73";
-    const amber=dark?"244,164,109":"178,93,56";
-    const amberSide=dark?"169,95,52":"138,75,43";
-    const safe=dark?"128,232,170":"59,151,105";
-    const safeSide=dark?"56,141,95":"54,120,83";
-    const hX=layout.halfX,hY=layout.halfY;
-    const items=centers.slice().sort((a,b)=>(a.j-b.j)||a.i-b.i);
+  function paintBackdrop(dark) {
+    const ambient = ctx.createLinearGradient(0, height * .18, 0, height * .83);
+    ambient.addColorStop(0, dark ? "rgba(120,188,145,0)" : "rgba(92,149,112,0)");
+    ambient.addColorStop(.52, dark ? "rgba(104,180,133,.043)" : "rgba(90,152,108,.044)");
+    ambient.addColorStop(1, dark ? "rgba(120,188,145,0)" : "rgba(92,149,112,0)");
+    ctx.fillStyle = ambient;
+    ctx.fillRect(0, height * .1, width, height * .8);
+    for (const pulse of shocks) {
+      const age = motion.matches ? 1 : t - pulse.born;
+      if (age < 0 || age > 5.3) continue;
+      const x = pulse.x * width, y = pulse.y * height;
+      const rad = Math.min(width * .43, 55 + age * (width * .17 + 58));
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      const alpha = .075 * Math.exp(-age * .35) * pulse.strength;
+      const r = dark ? "246,172,118" : "182,104,64";
+      glow.addColorStop(0, "rgba(" + r + "," + alpha + ")");
+      glow.addColorStop(.50, "rgba(" + r + "," + alpha * .35 + ")");
+      glow.addColorStop(1, "rgba(" + r + ",0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+  }
 
-    // Wide, low-rise architectural terrain. No nodes, orbiting, or connecting wires.
-    for(const p of items){
-      const a=activation(p.i,p.j);
-      const frontier=mode==="safeguarded"&&p.i===GATE-1;
-      const nearHover=hover.i>=0?Math.hypot((p.i-hover.i)*.85,p.j-hover.j):999;
-      const hovered=hover.alpha*Math.exp(-nearHover*nearHover*.25);
-      const terrain=(Math.sin(p.i*.49+p.j*.77)*.5+.5)*4.0+
-        (Math.sin(p.i*.17-p.j*.89)*.5+.5)*3;
-      const breathing=motion.matches?0:Math.sin(t*1.3+p.i*.39+p.j*.68)*1.6;
-      const rise=5+terrain+breathing+a*40+(frontier?9:0)+hovered*8;
-      const x=p.x,y=p.y;
-      const topY=y-rise;
-      const palette=frontier?safe:amber;
-      const sidePalette=frontier?safeSide:amberSide;
-      const risk=!frontier?a:0;
-      const faceAlpha=frontier?.52+hovered*.16:.20+risk*.70+hovered*.18;
-      const sideAlpha=frontier?.36:.12+risk*.59+hovered*.12;
-      const idleAlpha=.21+hovered*.18;
-      // Right/left faces make the change in pillar height legible.
-      polygon([[x,topY+hY],[x+hX,topY],[x+hX,y],[x,y+hY]],
-        rgba(frontier?sidePalette:risk>.035?sidePalette:right,sideAlpha));
-      polygon([[x-hX,topY],[x,topY+hY],[x,y+hY],[x-hX,y]],
-        rgba(frontier?sidePalette:risk>.035?sidePalette:left,sideAlpha*.76));
-      polygon([[x,topY-hY],[x+hX,topY],[x,topY+hY],[x-hX,topY]],
-        rgba(frontier?palette:risk>.035?palette:inactive,frontier?faceAlpha:risk>.035?faceAlpha:idleAlpha),
-        hovered>.17?rgba(safe,.22*hovered):null);
-      if(risk>.22){
-        ctx.beginPath();ctx.arc(x,topY,Math.max(1.1,hX*.12),0,Math.PI*2);
-        ctx.fillStyle=rgba(amber,.14+risk*.61);ctx.fill();
+  function draw() {
+    if (!width || !height) return;
+    const dark = document.documentElement.dataset.theme === "dark";
+    ctx.clearRect(0, 0, width, height);
+    paintBackdrop(dark);
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+
+    const activeRGB = dark ? "242,172,126" : "170,87,55";
+    const baseRGB = dark ? "157,209,174" : "70,121,89";
+    const activeSegments = [];
+
+    for (let j = 0; j < ROWS; j++) {
+      const y = cache.rows[j], points = [];
+      const focus = 1 - Math.abs((j + .5) / ROWS - .5) * 1.05;
+      for (const x of cache.xs) {
+        const field = measure(x, y);
+        points.push({ x, y: surfaceY(x, y, j, field), risk: field.risk });
+      }
+      // Each contour is a single smooth path, with no independent blocks to jitter.
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let k = 1; k < points.length; k++) {
+        const a = points[k - 1], b = points[k];
+        ctx.quadraticCurveTo((a.x + b.x) * .5, (a.y + b.y) * .5, b.x, b.y);
+      }
+      ctx.lineWidth = j % 4 === 0 ? 1.18 : .72;
+      ctx.strokeStyle = "rgba(" + baseRGB + "," + (dark ? .20 : .18) * focus + ")";
+      ctx.stroke();
+
+      // Amber only traces the moving disturbance front, not the full contour.
+      if (j % 2 === 0) {
+        let inBand = false;
+        ctx.beginPath();
+        for (const p of points) {
+          if (p.risk > .075) {
+            if (!inBand) { ctx.moveTo(p.x, p.y); inBand = true; }
+            else ctx.lineTo(p.x, p.y);
+          } else inBand = false;
+        }
+        ctx.lineWidth = 1.15;
+        ctx.strokeStyle = "rgba(" + activeRGB + "," + (dark ? .63 : .55) + ")";
+        ctx.stroke();
       }
     }
 
-    // The containment boundary is a single continuous translucent plane.
-    if(mode==="safeguarded"){
-      const top=centers.find(c=>c.i===GATE-1&&c.j===0);
-      const bottom=centers.find(c=>c.i===GATE-1&&c.j===NY-1);
-      if(top&&bottom){
-        ctx.save();
-        ctx.lineWidth=1;
-        ctx.setLineDash([3,7]);
-        ctx.strokeStyle=rgba(safe,.56);
-        ctx.beginPath();ctx.moveTo(top.x+layout.step*.50,top.y-38);
-        ctx.lineTo(bottom.x+layout.step*.50,bottom.y+8);ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.restore();
-      }
+    // Interventions appear as a translucent, smoothly emerging seam.
+    if (safeguard > .008) {
+      const x = width * .57;
+      ctx.save();
+      const line = ctx.createLinearGradient(x, height * .16, x, height * .85);
+      const rgb = dark ? "133,229,173" : "62,154,106";
+      line.addColorStop(0, "rgba(" + rgb + ",0)");
+      line.addColorStop(.25, "rgba(" + rgb + "," + safeguard * .62 + ")");
+      line.addColorStop(.75, "rgba(" + rgb + "," + safeguard * .62 + ")");
+      line.addColorStop(1, "rgba(" + rgb + ",0)");
+      ctx.strokeStyle = line;
+      ctx.lineWidth = 1.45;
+      ctx.beginPath();
+      ctx.moveTo(x, height * .15);
+      ctx.lineTo(x, height * .86);
+      ctx.stroke();
+      ctx.lineWidth = 10;
+      ctx.globalAlpha = safeguard * .14;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // A small tangible focal point makes click interactions legible immediately.
+    for (const pulse of shocks) {
+      const age = motion.matches ? 1 : t - pulse.born;
+      if (age < 0 || age > 5.6) continue;
+      const x = pulse.x * width, y = pulse.y * height;
+      const opacity = Math.exp(-age * 1.15) * pulse.strength;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.8 + Math.min(4, age * 2), 0, TAU);
+      ctx.fillStyle = "rgba(" + activeRGB + "," + opacity * .68 + ")";
+      ctx.fill();
     }
   }
 
-  function pick(x,y){
-    let nearest=null,min=Infinity;
-    for(const p of centers){
-      const dx=(p.x-x)/(layout.step*.75);
-      const dy=(p.y-y)/(layout.rowStep*.95+3);
-      const score=dx*dx+dy*dy;
-      if(score<min){min=score;nearest=p;}
+  function setMode(next) {
+    if (next !== "uncontained" && next !== "safeguarded") return;
+    if (next === mode) return;
+    mode = next;
+    safeguardTarget = mode === "safeguarded" ? 1 : 0;
+    for (const button of controls) {
+      const selected = button.dataset.landscapeMode === mode;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-pressed", String(selected));
     }
-    return min<8?nearest:null;
+    if (status) status.textContent = mode === "safeguarded"
+      ? "Safeguards enabled. The field transitions smoothly into a contained system."
+      : "Safeguards disabled. Propagation can cross the whole field.";
+    // Start a comparable wave without clearing the field, so no hard reset occurs.
+    emit(.18, .51, true);
+    if (motion.matches) { safeguard = safeguardTarget; draw(); }
+    else start();
   }
-  function point(e){
-    const rect=stage.getBoundingClientRect();
-    return pick(e.clientX-rect.left,e.clientY-rect.top);
+
+  for (const button of controls) {
+    button.addEventListener("click", () => setMode(button.dataset.landscapeMode));
   }
-  function move(e){
-    const p=point(e);
-    hover.i=p?p.i:-1;hover.j=p?p.j:-1;hover.alpha=p?1:0;
-    if(dragging&&p&&(p.i!==lastDrag)){
-      lastDrag=p.i;shock(p.i,p.j);
+
+  function local(e) {
+    const r = stage.getBoundingClientRect();
+    return {
+      x: clamp((e.clientX - r.left) / Math.max(1, r.width), 0, 1),
+      y: clamp((e.clientY - r.top) / Math.max(1, r.height), 0, 1)
+    };
+  }
+  stage.addEventListener("pointermove", e => {
+    if (e.pointerType === "touch" && !pointer.drawing) return;
+    const p = local(e);
+    pointer.targetX = p.x; pointer.targetY = p.y; pointer.active = true;
+    if (pointer.drawing && t - pointer.lastEmit > .17) {
+      emit(p.x, p.y);
+      pointer.lastEmit = t;
     }
-    if(motion.matches)draw();else start();
+    if (motion.matches) { pointer.x = p.x; pointer.y = p.y; pointer.strength = 1; draw(); }
+    else start();
+  }, { passive: true });
+  stage.addEventListener("pointerdown", e => {
+    if (e.button != null && e.button !== 0) return;
+    const p = local(e);
+    pointer.targetX = pointer.x = p.x;
+    pointer.targetY = pointer.y = p.y;
+    pointer.active = pointer.drawing = true;
+    pointer.lastEmit = t;
+    emit(p.x, p.y);
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  function release(e) {
+    pointer.drawing = false;
+    try { if (stage.hasPointerCapture?.(e.pointerId)) stage.releasePointerCapture(e.pointerId); } catch (_) {}
   }
-  function selectMode(next){
-    if(next!=="safeguarded"&&next!=="uncontained")return;
-    mode=next;
-    for(const btn of modeButtons){
-      const pressed=btn.dataset.landscapeMode===mode;
-      btn.setAttribute("aria-pressed",String(pressed));
-      btn.classList.toggle("active",pressed);
+  stage.addEventListener("pointerup", release);
+  stage.addEventListener("pointercancel", release);
+  stage.addEventListener("pointerleave", () => {
+    if (!pointer.drawing) pointer.active = false;
+    if (motion.matches) { pointer.strength = 0; draw(); }
+  });
+  stage.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      emit(.20, .5);
     }
-    shocks.length=0;
-    shock(4,Math.floor(NY/2));
-    if(status)status.textContent=mode==="safeguarded"?
-      "Safeguards active. The boundary interrupts the disturbance.":
-      "Safeguards inactive. Disturbances can spread through the whole system.";
+  });
+
+  function tick(now) {
+    frame = 0;
+    if (!visible || document.hidden) return;
+    // 60 fps-capable, time-based animation; never skip a half second of motion.
+    const dt = prevFrame ? clamp((now - prevFrame) / 1000, 0, .045) : 1 / 60;
+    prevFrame = now;
+    t += dt;
+    const follow = 1 - Math.exp(-dt * 11);
+    const strengthFollow = 1 - Math.exp(-dt * 8);
+    pointer.x = mix(pointer.x, pointer.targetX, follow);
+    pointer.y = mix(pointer.y, pointer.targetY, follow);
+    pointer.strength = mix(pointer.strength, pointer.active ? 1 : 0, strengthFollow);
+    safeguard = mix(safeguard, safeguardTarget, 1 - Math.exp(-dt * 3.1));
+    if (t > nextAuto) {
+      if (t - latestAction > 5.6) emit(.20, .53, true);
+      nextAuto = t + 7.4;
+    }
     draw();
+    start();
   }
-  for(const btn of modeButtons){
-    btn.addEventListener("click",()=>selectMode(btn.dataset.landscapeMode));
+  function start() {
+    if (!frame && visible && !document.hidden && !motion.matches)
+      frame = requestAnimationFrame(tick);
   }
-  stage.addEventListener("pointermove",move,{passive:true});
-  stage.addEventListener("pointerleave",()=>{hover.i=-1;hover.j=-1;hover.alpha=0;if(motion.matches)draw();});
-  stage.addEventListener("pointerdown",e=>{
-    if(e.button!==undefined&&e.button!==0)return;
-    dragging=true;lastDrag=-1;
-    const p=point(e);
-    if(p){lastDrag=p.i;shock(p.i,p.j);}
-    try{stage.setPointerCapture(e.pointerId);}catch(_){}
+  function refresh() {
+    resize();
+    if (motion.matches) draw();
+    else start();
+  }
+  if ("ResizeObserver" in window) new ResizeObserver(refresh).observe(stage);
+  else window.addEventListener("resize", refresh, { passive: true });
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(entries => {
+      visible = entries[0].isIntersecting;
+      if (!visible && frame) {
+        cancelAnimationFrame(frame);
+        frame = 0; prevFrame = 0;
+      }
+      if (visible) refresh();
+    }, { rootMargin: "100px" }).observe(stage);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0; prevFrame = 0;
+    } else refresh();
   });
-  stage.addEventListener("pointerup",e=>{
-    dragging=false;lastDrag=-1;
-    try{if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);}catch(_){}
-  });
-  stage.addEventListener("pointercancel",()=>{dragging=false;lastDrag=-1;});
-  stage.addEventListener("keydown",e=>{
-    if(e.key==="Enter"||e.key===" "){
-      e.preventDefault();shock(5,Math.floor(NY/2));
-    }
+  window.addEventListener("site-theme-change", refresh);
+  motion.addEventListener?.("change", () => {
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0; prevFrame = 0;
+    if (motion.matches) safeguard = safeguardTarget;
+    refresh();
   });
 
-  function start(){if(!frame&&visible&&!document.hidden&&!motion.matches)frame=requestAnimationFrame(tick);}
-  function tick(now){
-    frame=0;
-    if(!visible||document.hidden)return;
-    if(now-lastDraw<29){start();return;}
-    const dt=last?Math.min((now-last)/1000,.06):0;
-    last=now;lastDraw=now;t+=dt;
-    if(t>nextAuto){
-      if(t-recentAction>6)shock(4,Math.floor(NY/2));
-      nextAuto=t+8.6;
-    }
-    draw();start();
-  }
-  function refresh(){resize();if(motion.matches)draw();else start();}
-  if("ResizeObserver" in window)new ResizeObserver(refresh).observe(stage);
-  else window.addEventListener("resize",refresh,{passive:true});
-  if("IntersectionObserver" in window){
-    new IntersectionObserver(entries=>{
-      visible=entries[0].isIntersecting;
-      if(!visible&&frame){cancelAnimationFrame(frame);frame=0;last=0;}
-      if(visible)refresh();
-    },{rootMargin:"120px"}).observe(stage);
-  }
-  document.addEventListener("visibilitychange",()=>{
-    if(document.hidden){if(frame)cancelAnimationFrame(frame);frame=0;last=0;}
-    else refresh();
-  });
-  motion.addEventListener?.("change",()=>{
-    if(frame)cancelAnimationFrame(frame);frame=0;last=0;refresh();
-  });
-  window.addEventListener("site-theme-change",refresh);
+  // A visible pulse is present as soon as the component enters view.
+  shocks.push({ x: .20, y: .53, born: -.42, strength: .88 });
   refresh();
 })();
