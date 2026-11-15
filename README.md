@@ -17,17 +17,15 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
-### Fluid propagation and containment landscape
+### Emergence: a layered optical artwork
 
-Between **Projects** and **Engagements**, a compact, widescreen interactive field (`risk-landscape.js`) shows an illustrative difference between unchecked propagation and containment. It deliberately avoids the neural nodes, orbiting geometry, and three-dimensional structures of the hero.
+Between **Projects** and **Engagements**, the compact, horizontal artwork in `emergence.js` combines three semi-transparent moving line fields. Each layer is geometrically simple, but their overlaps produce continually changing interference patterns. The interaction is intended as an abstract expression of the way agency, institutional structure, and environment interact in research on complex AI systems. It is **not** a visualization of a specific empirical result.
 
-- Smooth horizontal contours depict possible propagation pathways; an amber traveling wave shows a disturbance
-- Pointer movement deforms the contours like an elastic fabric, while clicking, tapping, or dragging launches additional ripples
-- **Uncontained** lets pulses spread across the entire field; **With safeguards** introduces a soft green vertical seam and attenuates waves beyond it
-- The boundary transitions smoothly instead of abruptly replacing the view; automatic pulses keep the scene alive while idle
-- The implementation uses requestAnimationFrame with time-based easing, precomputed horizontal positions, high-DPI capping, offscreen pausing, dark/light palettes and reduced-motion support
+- A wide, shallow canvas presents delicate vertical waves, a second slightly misaligned engraving, and a third transverse texture layer
+- The composition moves autonomously. Hovering smoothly shifts the relationship between layers; moving away allows it to settle back
+- There are no buttons, clicks, dragging, captions, mandatory user instructions, or separate modes
+- The presentation respects light/dark themes, dynamically fits its container, caps canvas pixel density, pauses when offscreen or hidden, and respects reduced-motion preferences
 
-The field is a **conceptual illustration**, not an empirical simulation or forecast.
 
 ## Content
 
