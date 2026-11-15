@@ -17,17 +17,15 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
-### The Unseen Model: prediction as a computational material
+### Emergence: a self-organizing network
 
-Between **Projects** and **Engagements**, a panoramic generative sculpture (`emergence.js`) connects interactive visual behaviour to a central theme in machine learning: a system forms expectations about uncertain input and changes when its expectations fail.
+The compact, horizontal artwork in `emergence.js` implements an abstract system inspired by local reinforcement and stigmergy. Each moving dot senses nearby traces, tends to follow attractive routes, and deposits a trace of its own. Traces spread and decay. Together these simple rules generate evolving pathways, branches, loops and intersections without explicitly programmed global shapes. Overused routes can become less attractive, so the network competes, splits and reorganizes instead of settling permanently into a predefined flower, lattice, arch or diagram.
 
-The visual material is a bespoke WebGL raymarched metamaterial with nested porous folds, carved chambers, cross-bracing, surface etching, simulated shadows and jade/copper illumination. It is **not a neural network diagram, particle swarm, or fixed imported 3D model**. Its topology evolves autonomously, including in the absence of visitors.
+The cursor acts as a local environmental signal. Moving across the canvas adds a temporary influence at each visited position; nearby dots respond and may create new routes or redirect old ones. Earlier influences gradually fade, while the collective system keeps running independently. Both the moving dots and their dotted trails are rendered as **dots only**, never as line segments.
 
-An actual lightweight online cursor predictor observes recent positions and velocities, predicts a near-future position, and updates its weights from prediction errors. The predicted position illuminates and locally opens the 3D material. Reversals and other unexpected movement can trigger a stronger structural response: irregular facets separate, openings appear, and the material reorganises nonlocally. Prediction state and temporary deformation persist briefly after interaction. The predictor is deliberately small and browser-local; it is not a general-purpose AI or a pretrained model.
+No clicks, controls, instructional captions, mandatory interaction or third-party animation library. The feature retains its shallow panoramic layout and supports light/dark themes, capped canvas density, offscreen pausing, and gentler animation under reduced-motion preferences.
 
-The component has no buttons, clicks or mandatory instructions. It renders at a higher, device-aware resolution with smoother surface normals and lighting, supports reduced motion, pauses offscreen, and respects light/dark palettes. When WebGL is unavailable or software-rendered, a high-density, antialiased Canvas 2D sculptural fallback replaces the earlier sparse dot placeholder.
-
-This is an **original conceptual artwork**, not a demonstration of emergent intelligence or a scientifically validated account of learning and cognition.
+This generative visual is **not** a representation of specific empirical research findings or a scientifically validated model of a particular institution.
 
 
 ## Content
