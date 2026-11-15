@@ -17,17 +17,17 @@ The page background uses a much lighter, continuously moving projection of the s
 
 This is an abstract visual exploration of connected intelligence and control, not a diagram of a specific research result.
 
-### Emergence: distributed representations
+### The Unseen Model: prediction as a computational material
 
-The compact artwork between Projects and Engagements is a dot-based, neural-inspired latent representation field (`emergence.js`). Unlike the earlier stigmergy and swarm studies, it explores how distributed nonlinear activations can generate an unexpectedly coherent global projection.
+Between **Projects** and **Engagements**, a panoramic generative sculpture (`emergence.js`) connects interactive visual behaviour to a central theme in machine learning: a system forms expectations about uncertain input and changes when its expectations fail.
 
-- A compact **8 → 14 → 8 nonlinear feature mixer** evolves latent activations from autonomous signals and live cursor input. The weights are deterministic generative parameters, **not trained weights**.
-- Approximately 5,100 to 12,600 tiny points form a diffuse spatial field. As a nonlinear **coherence threshold** is crossed, the points condense into two interacting, folded feature subspaces with depth and changing topology.
-- The coherent geometry is recomputed from the current feature state each frame. There are no scripted flowers, icons, or fixed pictures to assemble.
-- Cursor movement supplies new input to the feature mixer, changing the representation across distant regions as well as triggering short, travelling activation pulses. The whole structure continues evolving after the pointer leaves.
-- The piece uses point-only Canvas rendering, responsive dimensions, light/dark palettes, offscreen pausing, and gentler reduced-motion behaviour. There are no clicks, controls, menus, or instructional captions.
+The visual material is a bespoke WebGL raymarched metamaterial with nested porous folds, carved chambers, cross-bracing, surface etching, simulated shadows and jade/copper illumination. It is **not a neural network diagram, particle swarm, or fixed imported 3D model**. Its topology evolves autonomously, including in the absence of visitors.
 
-This is a **conceptual visual analogy** for distributed representations and emergent structure in neural computation, not an empirical visualization, demonstration of a trained neural network, or claim that the artwork has learned or developed intelligence.
+An actual lightweight online cursor predictor observes recent positions and velocities, predicts a near-future position, and updates its weights from prediction errors. The predicted position illuminates and locally opens the 3D material. Reversals and other unexpected movement can trigger a stronger structural response: irregular facets separate, openings appear, and the material reorganises nonlocally. Prediction state and temporary deformation persist briefly after interaction. The predictor is deliberately small and browser-local; it is not a general-purpose AI or a pretrained model.
+
+The component has no buttons, clicks or mandatory instructions. It uses a cap on rendering resolution, a reduced-motion mode, pauses offscreen, light/dark palettes, and a 2D fallback for unavailable or software-rendered WebGL contexts.
+
+This is an **original conceptual artwork**, not a demonstration of emergent intelligence or a scientifically validated account of learning and cognition.
 
 
 ## Content
