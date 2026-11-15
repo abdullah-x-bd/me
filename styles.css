@@ -756,65 +756,66 @@ html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
 
 
 
-/* Emergence: quiet, wide, optically layered, without on-canvas controls. */
-.emergence-section {
+/* Architecture of Emergence: four kinetic structures in a wide, shallow frame. */
+.emergence-section{
   position:relative;
-  padding:32px 0 46px;
   border-bottom:1px solid var(--line);
-  scroll-margin-top:32px;
+  padding:24px 0 31px;
+  scroll-margin-top:30px;
 }
-.emergence-heading {
-  margin:0 0 17px;
-  font:500 clamp(22px,2.1vw,29px)/1.15 var(--sans);
-  letter-spacing:-.052em;
+.emergence-heading{
+  margin:0 0 12px;
   color:var(--ink);
+  font:500 clamp(22px,2vw,27px)/1.12 var(--sans);
+  letter-spacing:-.049em;
 }
-.emergence-stage {
+.emergence-stage{
   position:relative;
-  display:block;
-  width:100%;
-  height:clamp(174px,19.5vw,228px);
   isolation:isolate;
   overflow:hidden;
-  cursor:default;
-  touch-action:pan-y;
+  width:100%;
+  height:clamp(184px,18vw,212px);
   background:transparent;
+  touch-action:pan-y;
+  cursor:default;
 }
-.emergence-stage::before {
+.emergence-stage::before{
   content:"";
   position:absolute;
-  pointer-events:none;
-  inset:0;
   z-index:0;
-  background:radial-gradient(ellipse 46% 68% at 50% 50%,rgba(96,150,111,.035),transparent 84%);
+  inset:0;
+  pointer-events:none;
+  background:radial-gradient(ellipse 43% 69% at 50% 50%,rgba(111,161,123,.060),transparent 83%);
 }
-.emergence-stage::after {
+.emergence-stage::after{
   content:"";
   position:absolute;
   z-index:2;
+  inset:0;
   pointer-events:none;
-  inset:0;
-  background:linear-gradient(90deg,var(--paper) 0%,transparent 9%,transparent 91%,var(--paper) 100%);
+  background:linear-gradient(90deg,var(--paper) 0%,transparent 5%,transparent 95%,var(--paper) 100%);
 }
-.emergence-stage canvas {
+.emergence-stage canvas{
   position:absolute;
-  inset:0;
-  z-index:1;
   display:block;
+  z-index:1;
+  inset:0;
   width:100%;
   height:100%;
 }
-html[data-theme="dark"] .emergence-stage::before {
-  background:radial-gradient(ellipse 47% 70% at 50% 50%,rgba(130,207,154,.037),transparent 84%);
+html[data-theme="dark"] .emergence-stage::before{
+  background:radial-gradient(ellipse 43% 69% at 50% 50%,rgba(105,165,122,.070),transparent 83%);
 }
-@media(max-width:800px) {
-  .emergence-section{padding:27px 0 38px}
-  .emergence-heading{margin-bottom:12px}
-  .emergence-stage{height:clamp(167px,26vw,205px)}
+@media(max-width:800px){
+  .emergence-section{padding:22px 0 29px}
+  .emergence-heading{margin-bottom:10px}
+  .emergence-stage{height:190px}
 }
-@media(max-width:610px) {
-  .emergence-section{padding:24px 0 34px}
-  .emergence-heading{font-size:24px;margin-bottom:9px}
-  .emergence-stage{height:175px}
-  .emergence-stage::after{background:linear-gradient(90deg,var(--paper) 0%,transparent 6%,transparent 94%,var(--paper) 100%)}
+@media(max-width:610px){
+  .emergence-section{padding:20px 0 27px}
+  .emergence-heading{font-size:24px;margin-bottom:8px}
+  .emergence-stage{height:172px}
+  .emergence-stage::after{
+    background:linear-gradient(90deg,var(--paper) 0%,transparent 3%,transparent 97%,var(--paper) 100%);
+  }
 }
