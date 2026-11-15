@@ -30,7 +30,7 @@
   const FORMATIONS = 4;
 
   let width = 0, height = 0, dpr = 1, visible = true;
-  let raf = 0, last = 0, time = .18, particles = [];
+  let raf = 0, last = 0, time = 2.82, particles = [];
   let cachedTheme = "";
   let palette = null;
 
@@ -87,7 +87,7 @@
       const y = pillar
         ? .57 - p.s * 1.00
         : .56 - 1.08 * rounded + v * .082;
-      return {x, y: y + Math.sin(t * .38 + p.z * TAU) * .011};
+      return {x: x + .010 * Math.sin(t * .55 + p.u * 4.8), y: y + Math.sin(t * .58 + p.z * TAU) * .024};
     }
 
     // 1: A coordinated braid. Independent streams weave into an ordered whole.
@@ -193,7 +193,7 @@
 
     // When a structure dissolves, each fragment takes a slightly different
     // path, producing a visible transformation rather than a crossfade.
-    const loosen = form.turbulence * .058;
+    const loosen = form.turbulence * .078;
     x += loosen * Math.sin(p.z * TAU + t * .85);
     y += loosen * Math.cos(p.s * TAU + t * .69);
 
