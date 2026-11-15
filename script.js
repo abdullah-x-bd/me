@@ -1,6 +1,33 @@
 (() => {
 "use strict";
 document.documentElement.classList.add("js");
+
+const themeToggle=document.querySelector(".theme-toggle");
+const systemTheme=window.matchMedia("(prefers-color-scheme: dark)");
+function syncTheme(){
+ const dark=document.documentElement.dataset.theme==="dark";
+ const label=dark?"Switch to light mode":"Switch to dark mode";
+ themeToggle?.setAttribute("aria-label",label);
+ themeToggle?.setAttribute("title",label);
+ themeToggle?.setAttribute("aria-pressed",String(dark));
+ document.querySelector('meta[name="theme-color"]')?.setAttribute("content",dark?"#111915":"#f7f7f4");
+ window.dispatchEvent(new Event("site-theme-change"));
+}
+syncTheme();
+themeToggle?.addEventListener("click",()=>{
+ const next=document.documentElement.dataset.theme==="dark"?"light":"dark";
+ document.documentElement.dataset.theme=next;
+ try{localStorage.setItem("ax-theme",next)}catch(e){}
+ syncTheme();
+});
+systemTheme.addEventListener?.("change",()=>{
+ let saved;try{saved=localStorage.getItem("ax-theme")}catch(e){}
+ if(saved!=="dark"&&saved!=="light"){
+  document.documentElement.dataset.theme=systemTheme.matches?"dark":"light";
+  syncTheme();
+ }
+});
+
 const year=document.querySelector("#year");
 if(year) year.textContent=String(new Date().getFullYear());
 const toggle=document.querySelector(".menu-button"),nav=document.querySelector("#mobile-navigation");
