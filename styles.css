@@ -756,7 +756,7 @@ html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
 
 
 
-/* Architecture of Emergence: four kinetic structures in a wide, shallow frame. */
+/* Emergence: responsive dot swarm and soft living field, in a shallow panoramic frame. */
 .emergence-section{
   position:relative;
   border-bottom:1px solid var(--line);
@@ -785,7 +785,7 @@ html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
   z-index:0;
   inset:0;
   pointer-events:none;
-  background:radial-gradient(ellipse 43% 69% at 50% 50%,rgba(111,161,123,.060),transparent 83%);
+  background:radial-gradient(ellipse 44% 68% at 50% 50%,rgba(111,161,123,.035),transparent 83%);
 }
 .emergence-stage::after{
   content:"";
@@ -804,7 +804,7 @@ html[data-theme="dark"] .email-list a span:last-child{color:var(--accent)}
   height:100%;
 }
 html[data-theme="dark"] .emergence-stage::before{
-  background:radial-gradient(ellipse 43% 69% at 50% 50%,rgba(105,165,122,.070),transparent 83%);
+  background:radial-gradient(ellipse 44% 68% at 50% 50%,rgba(105,165,122,.040),transparent 83%);
 }
 @media(max-width:800px){
   .emergence-section{padding:22px 0 29px}
