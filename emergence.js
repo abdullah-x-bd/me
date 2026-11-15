@@ -96,7 +96,7 @@
              n.y+1.8*Math.cos(frame*.005+ni*1.43),.12);
       }
     }
-    if(pointer.inside&&frame%4===0)feed(pointer.x,pointer.y,.22);
+    if(pointer.inside&&frame%4===0)feed(pointer.x,pointer.y,.32);
     const lessMotion=motion.matches;
     for(let i=0;i<agents.length;i++){
       const a=agents[i],dir=a.angle,d=a.sensor;
@@ -166,7 +166,7 @@
     for(let i=1;i<=count;i++){
       const q=i/count;
       feed(pointer.inside?pointer.x+(gx-pointer.x)*q:gx,
-           pointer.inside?pointer.y+(gy-pointer.y)*q:gy,1.25);
+           pointer.inside?pointer.y+(gy-pointer.y)*q:gy,1.85);
     }
     pointer.inside=true;pointer.x=gx;pointer.y=gy;
     droplets.push({x:gx,y:gy,born:clock});
